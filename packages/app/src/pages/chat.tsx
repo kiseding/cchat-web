@@ -257,7 +257,7 @@ export function ChatPage() {
   const [permissionMode, setPermissionMode] = createSignal("default")
   const [question, setQuestion] = createSignal<any>(null)
   const [optimisticUserMsg, setOptimisticUserMsg] = createSignal<Message | null>(null)
-  const [sessionData, { refetch }] = createResource(
+  const [sessionData, { refetch, mutate }] = createResource(
     () => params.id || null,
     (id) => id ? api.getSession(id) : Promise.resolve(null)
   )
@@ -342,12 +342,28 @@ export function ChatPage() {
       console.error("Send error:", err)
     } finally {
       setSending(false)
+      // Build assistant message from streaming data and append locally
+      const finalText = streamingText()
+      const finalTools = streamingTools()
+      if (finalText || finalTools.length > 0) {
+        const cur = sessionData()
+        if (cur) {
+          const parts: any[] = []
+          if (finalTools.length > 0) {
+            for (const t of finalTools) {
+              if (t.type === "tool_call") parts.push({ type: "tool_call", toolName: t.toolName, toolInput: t.toolInput, toolId: t.toolId })
+              else parts.push({ type: "tool_result", toolOutput: t.toolOutput, toolId: t.toolId })
+            }
+          }
+          const assistantMsg = { id: "local-" + Date.now(), role: "assistant", content: finalText, parts, timestamp: Date.now() }
+          mutate({ ...cur, messages: [...cur.messages, assistantMsg] })
+        }
+      }
       setStreamingText("")
       setThinkingTokens(0)
       setStreamingTools([])
       setOptimisticUserMsg(null)
-      // Wait for server to save, then reload session data
-      setTimeout(() => { refetch(); scrollToBottom() }, 800)
+      scrollToBottom()
     }
   }
 

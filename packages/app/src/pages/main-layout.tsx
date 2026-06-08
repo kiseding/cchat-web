@@ -190,23 +190,25 @@ export function MainLayout(props: { children: any }) {
         <div class="font-medium text-base truncate flex-1" style="color: var(--text-strong)">{sessionTitle()}</div>
 
         {/* macOS traffic lights */}
-        <Show when={params.id}>
-          <div class="flex items-center gap-3">
-            <button onClick={async () => {
-              if (await showConfirm("Delete this session?", "Delete", "#dc2626")) { api.deleteSession(params.id); navigate("/") }
-            }}
-              class="w-[18px] h-[18px] rounded-full cursor-pointer transition-opacity hover:opacity-80"
-              style={{ background: "#f87171" }} title="Delete session" />
-            <button onClick={async () => {
-              if (await showConfirm("Close this session?", "Close", "#fbbf24")) navigate("/")
-            }}
-              class="w-[18px] h-[18px] rounded-full cursor-pointer transition-opacity hover:opacity-80"
-              style={{ background: "#fbbf24" }} title="Close session" />
-            <button onClick={openNewDialog}
-              class="w-[18px] h-[18px] rounded-full cursor-pointer transition-opacity hover:opacity-80"
-              style={{ background: "#34d399" }} title="New session" />
-          </div>
-        </Show>
+        <div class="flex items-center gap-3">
+          <button onClick={async () => {
+            if (!params.id) return
+            if (await showConfirm("Delete this session?", "Delete", "#dc2626")) { api.deleteSession(params.id); navigate("/") }
+          }}
+            class="w-[18px] h-[18px] rounded-full transition-opacity"
+            classList={{ "cursor-pointer hover:opacity-80": !!params.id, "opacity-30 cursor-not-allowed": !params.id }}
+            style={{ background: "#f87171" }} title={params.id ? "Delete session" : "No session"} />
+          <button onClick={async () => {
+            if (!params.id) return
+            if (await showConfirm("Close this session?", "Close", "#fbbf24")) navigate("/")
+          }}
+            class="w-[18px] h-[18px] rounded-full transition-opacity"
+            classList={{ "cursor-pointer hover:opacity-80": !!params.id, "opacity-30 cursor-not-allowed": !params.id }}
+            style={{ background: "#fbbf24" }} title={params.id ? "Close session" : "No session"} />
+          <button onClick={openNewDialog}
+            class="w-[18px] h-[18px] rounded-full cursor-pointer hover:opacity-80 transition-opacity"
+            style={{ background: "#34d399" }} title="New session" />
+        </div>
       </header>
 
       <main class="flex-1 min-h-0 overflow-hidden">
