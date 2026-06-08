@@ -254,7 +254,7 @@ export function ChatPage() {
   const [streamingText, setStreamingText] = createSignal("")
   const [thinkingTokens, setThinkingTokens] = createSignal(0)
   const [streamingTools, setStreamingTools] = createSignal<Array<{type:"tool_call"|"tool_result",toolName?:string,toolInput?:any,toolOutput?:string,toolId?:string}>>([])
-  const [permissionMode, setPermissionMode] = createSignal("default")
+  const [permissionMode, setPermissionMode] = createSignal("bypassPermissions")
   const [question, setQuestion] = createSignal<any>(null)
   const [optimisticUserMsg, setOptimisticUserMsg] = createSignal<Message | null>(null)
   const [sessionData, { refetch, mutate }] = createResource(
