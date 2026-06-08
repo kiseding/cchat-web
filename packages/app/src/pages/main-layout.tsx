@@ -207,7 +207,7 @@ export function MainLayout(props: { children: any }) {
     <div class="h-dvh w-screen flex flex-col overflow-hidden" style="position: relative" style="background: var(--bg-base); color: var(--text-[17px])">
       {/* Overlay */}
       <Show when={sidebarOpen()}>
-        <div class="fixed inset-0 z-30" style="background: rgba(0,0,0,0.3)" onClick={() => setSidebarOpen(false)} />
+        <div class="fixed inset-0 z-30" style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }} onClick={() => setSidebarOpen(false)} />
       </Show>
 
       <Sidebar open={sidebarOpen()} onClose={() => setSidebarOpen(false)} showConfirm={showConfirm} onNewSession={openNewDialog} refreshTick={refreshTick()} />
