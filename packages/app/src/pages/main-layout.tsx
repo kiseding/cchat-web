@@ -67,7 +67,7 @@ function NewSessionDialog(props: { creating: boolean; nameError: string; name: s
           }} disabled={props.creating} class="px-4 py-2 rounded-lg text-[15px] font-medium cursor-pointer disabled:opacity-50" style={{ background: "#34d399", color: "white" }}>Create</button>
         </div>
       </div>
-    </div>
+    </DialogOverlay>
   )
 }
 
