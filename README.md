@@ -1,71 +1,64 @@
 # CChat-Web
 
-Web chat interface for Claude Code. Bridges Claude Code CLI's stream-json protocol to a browser UI via HTTP + SSE.
+Claude Code 的 Web 聊天界面。通过 HTTP + SSE 桥接 Claude Code CLI 的 stream-json 协议，在浏览器里使用 Claude Code。
 
-## Features
+A web chat interface for Claude Code. Bridges Claude Code CLI's stream-json protocol to the browser via HTTP + SSE.
 
-- Claude Code powered — uses local CLI, not token API
-- Real-time SSE streaming — thinking tokens and response appear as they're generated
-- Tool calls rendered as collapsible blocks (Bash, Read, Write, etc.)
-- Multi-session management — create, rename, delete; sessions are isolated
-- Password auth via Bearer token
-- Dark mode follows system preference
-- Mobile responsive
+## 特性 / Features
 
-## Prerequisites
+- 🗣️ Claude Code 驱动，非 token API / Powered by Claude Code CLI, not Anthropic API
+- ⚡ SSE 实时流式输出 / Real-time streaming via SSE
+- 🛠️ 工具调用折叠卡片 / Collapsible tool call cards (Bash, Read, Write...)
+- 📝 多会话管理 / Multi-session management
+- 🔒 Bearer token 密码认证 / Password auth
+- 🎨 深色模式 / Dark mode
+- 📱 移动端适配 / Mobile responsive
+- 🐳 4MB Docker 镜像 / 4MB Docker image
 
-- **Go** ≥ 1.22
-- **Node.js** ≥ 22 (frontend build only)
-- **Claude Code CLI** (`claude` in PATH)
+## 前置条件 / Prerequisites
 
-```bash
-claude --version
-```
+- **Go** ≥ 1.22 或 **Node.js** ≥ 22（仅前端构建 / frontend build only）
+- **Claude Code CLI** (`claude` 在 PATH 中)
 
-If `claude` is not in PATH:
-```bash
-export CLAUDE_PATH=/path/to/claude
-```
-
-## Quick Start
+## 快速开始 / Quick Start
 
 ```bash
 git clone https://github.com/kiseding/cchat-web.git
 cd cchat-web
-./start.sh your-password
+./start.sh 你的密码
 ```
 
-Open `http://localhost:4096`, enter password to login.
+打开 `http://localhost:4096`，输入密码登录。
 
-## Manual Setup
+## 手动部署 / Manual Setup
 
 ```bash
-# Build frontend (one-time)
+# 构建前端 / Build frontend
 cd packages/app && npm install && npx vite build
 
-# Build and run server
-cd packages/server
+# 编译并启动 / Build and run server
+cd ../server
 go build -o server main.go
-AUTH_TOKEN=your-password ./server
+AUTH_TOKEN=你的密码 ./server
 ```
 
-## Development
+## 开发模式 / Development
 
 ```bash
-# Terminal 1 — API server
+# 终端 1 — API 服务器
 cd packages/server && PORT=5173 AUTH_TOKEN=your-password go run main.go
 
-# Terminal 2 — Frontend dev server with HMR
+# 终端 2 — 前端热更新
 cd packages/app && npx vite
 ```
 
-## Environment Variables
+## 环境变量 / Environment
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `AUTH_TOKEN` | `cchat2web` | Login password |
-| `PORT` | `4096` | Server port |
-| `CLAUDE_PATH` | `claude` | Path to Claude Code binary |
+| 变量 | 默认 | 说明 |
+|------|------|------|
+| `AUTH_TOKEN` | `cchat2web` | 登录密码 |
+| `PORT` | `4096` | 服务端口 |
+| `CLAUDE_PATH` | `claude` | Claude Code 路径 |
 
 ## Docker
 
@@ -73,58 +66,60 @@ cd packages/app && npx vite
 docker compose up -d
 ```
 
-Image: `ghcr.io/kiseding/cchat-web` (auto-built on push to master).
+镜像自动构建于每次 push：`ghcr.io/kiseding/cchat-web`（压缩后 4MB）。
+
+The image is auto-built on push: `ghcr.io/kiseding/cchat-web` (4MB compressed).
 
 ## API
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/sessions` | List sessions |
-| POST | `/api/sessions` | Create session |
-| GET | `/api/sessions/:id` | Session detail + messages |
-| DELETE | `/api/sessions/:id` | Delete session |
-| POST | `/api/sessions/:id/messages` | Send message (SSE streaming) |
-| POST | `/api/sessions/:id/abort` | Abort running request |
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/sessions` | 会话列表 / List sessions |
+| POST | `/api/sessions` | 创建会话 / Create session |
+| GET | `/api/sessions/:id` | 会话详情 / Session detail |
+| DELETE | `/api/sessions/:id` | 删除会话 / Delete session |
+| POST | `/api/sessions/:id/messages` | 发送消息 (SSE) / Send message |
+| POST | `/api/sessions/:id/abort` | 中断 / Abort |
 
-## Architecture
+## 架构 / Architecture
 
 ```
-Browser (SolidJS)   :4096
+浏览器 (SolidJS)   :4096
     ↕ HTTP + SSE
-Go server           :4096
+Go 服务器           :4096
     ↕ stdin/stdout stream-json
-Claude Code CLI     (one process per message)
+Claude Code CLI     (每条消息一个进程)
 ```
 
-## Project Structure
+## 项目结构 / Structure
 
 ```
 cchat-web/
 ├── packages/
 │   ├── app/           # SolidJS SPA
 │   │   └── src/
-│   │       ├── app.tsx              # Login page
+│   │       ├── app.tsx              # 登录页 / Login
 │   │       ├── pages/
-│   │       │   ├── chat.tsx         # Chat page
-│   │       │   └── main-layout.tsx  # Layout + sidebar
-│   │       ├── api/client.ts        # HTTP client + SSE parser
-│   │       └── index.css            # Styles
-│   └── server/        # Go server
-│       ├── main.go     # HTTP, SSE, Claude process, session store
+│   │       │   ├── chat.tsx         # 聊天页 / Chat
+│   │       │   └── main-layout.tsx  # 布局 + 侧边栏 / Layout
+│   │       ├── api/client.ts        # HTTP + SSE 客户端
+│   │       └── index.css            # 样式 / Styles
+│   └── server/        # Go 服务端
+│       ├── main.go     # HTTP, SSE, Claude 进程, 会话存储
 │       └── go.mod
 ├── Dockerfile
 ├── docker-compose.yml
 └── start.sh
 ```
 
-## Tech Stack
+## 技术栈 / Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | SolidJS + Tailwind CSS + marked |
-| Server | Go (stdlib: net/http) |
+| 层 | 技术 |
+|---|------|
+| 前端 | SolidJS + Tailwind CSS + marked |
+| 后端 | Go (net/http) |
 | AI | Claude Code CLI (stream-json) |
-| Container | Docker multi-stage (scratch ~10MB) |
+| 容器 | Docker multi-stage (scratch, ~4MB) |
 
 ## License
 
