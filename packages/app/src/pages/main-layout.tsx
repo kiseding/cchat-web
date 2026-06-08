@@ -37,6 +37,10 @@ function NewSessionDialog(props: { creating: boolean; nameError: string; name: s
 }
 
 function Sidebar(props: { open: boolean; onClose: () => void; showConfirm: (msg: string, label?: string, color?: string) => Promise<boolean>; onNewSession: () => void; refreshTick: number }) {
+  // Refetch when sidebar opens
+  createEffect(() => {
+    if (props.open) refetch()
+  })
   const _showConfirm = props.showConfirm
   const navigate = useNavigate()
   const params = useParams<{ id?: string }>()

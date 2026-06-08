@@ -262,6 +262,15 @@ export function ChatPage() {
     (id) => id ? api.getSession(id) : Promise.resolve(null)
   )
 
+  // Auto-send pending message from session creation
+  onMount(() => {
+    const pending = sessionStorage.getItem("pending-msg")
+    if (pending && params.id) {
+      sessionStorage.removeItem("pending-msg")
+      setTimeout(() => { setInput(pending); send() }, 100)
+    }
+  })
+
   let scrollerRef!: HTMLDivElement
   let inputRef!: HTMLTextAreaElement
 
@@ -281,7 +290,10 @@ export function ChatPage() {
       try {
         const s = await api.createSession()
         sid = s.id
+        // Store text so new page can auto-send
+        sessionStorage.setItem("pending-msg", text)
         navigate(`/chat/${s.id}`, { replace: true })
+        return // Let the new page instance handle sending
       } catch { return }
     }
 
