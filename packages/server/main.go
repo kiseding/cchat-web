@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -190,6 +191,16 @@ func (cp *ClaudeProcess) kill() {
 
 // ── Session Storage ──
 
+var validID = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
+
+func safeSessionID(raw string) string {
+	id := strings.Split(strings.TrimPrefix(raw, "/api/sessions/"), "/")[0]
+	if !validID.MatchString(id) {
+		return ""
+	}
+	return id
+}
+
 func ensureDir() { os.MkdirAll(sessionsDir, 0755) }
 
 func listSessions() ([]SessionMeta, error) {
@@ -334,8 +345,11 @@ func handleSessions(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleSession(w http.ResponseWriter, r *http.Request) {
-	id := strings.TrimPrefix(r.URL.Path, "/api/sessions/")
-	id = strings.Split(id, "/")[0]
+	id := safeSessionID(r.URL.Path)
+	if id == "" {
+		writeJSON(w, 400, map[string]string{"error": "Invalid session ID"})
+		return
+	}
 
 	switch r.Method {
 	case "GET":
@@ -360,7 +374,11 @@ func handleMessages(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, 404, map[string]string{"error": "Not found"})
 		return
 	}
-	id := parts[0]
+	id := safeSessionID(r.URL.Path)
+	if id == "" {
+		writeJSON(w, 400, map[string]string{"error": "Invalid session ID"})
+		return
+	}
 
 	var body struct{ Text string }
 	json.NewDecoder(r.Body).Decode(&body)
@@ -542,10 +560,13 @@ done:
 }
 
 func handleAbort(w http.ResponseWriter, r *http.Request) {
-	id := strings.TrimPrefix(r.URL.Path, "/api/sessions/")
-	id = strings.Split(id, "/")[0]
+	id := safeSessionID(r.URL.Path)
+	if id == "" {
+		writeJSON(w, 400, map[string]string{"error": "Invalid session ID"})
+		return
+	}
 	rcMu.Lock()
-	if cmd, ok := runningCmd[id]; ok {
+	if cmd, ok := runningCmd[id]; ok && cmd.Process != nil {
 		cmd.Process.Kill()
 		delete(runningCmd, id)
 	}
