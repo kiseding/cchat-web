@@ -1,0 +1,6 @@
+{
+  "name": "cchat2web",
+  "private": true,
+  "type": "module",
+  "workspaces": ["packages/*"]
+}
