@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "tailwindcss-animate";
 
 /* Scrollbar - subtle, always visible */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
