@@ -169,7 +169,7 @@ export function MainLayout(props: { children: any }) {
   }
 
   return (
-    <div class="h-dvh w-screen flex flex-col overflow-hidden" style="background: var(--bg-base); color: var(--text-base)">
+    <div class="h-dvh w-screen flex flex-col overflow-hidden" style="position: relative" style="background: var(--bg-base); color: var(--text-base)">
       {/* Overlay */}
       <Show when={sidebarOpen()}>
         <div class="fixed inset-0 z-30" style="background: rgba(0,0,0,0.3)" onClick={() => setSidebarOpen(false)} />
