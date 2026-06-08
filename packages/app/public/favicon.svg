@@ -1,13 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#07c160"/>
-      <stop offset="100%" stop-color="#05944a"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#059669"/>
     </linearGradient>
   </defs>
-  <!-- Chat bubble -->
-  <rect x="6" y="8" width="48" height="34" rx="12" fill="url(#g)"/>
-  <polygon points="18,48 24,40 12,40" fill="#05944a"/>
-  <!-- Lightning bolt (Claude power) -->
-  <polygon points="35,18 29,32 34,32 28,46 39,28 33,28 38,18" fill="white"/>
+  <!-- Rounded square background -->
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#bg)"/>
+  <!-- Left chat bubble -->
+  <path d="M12 22c0-3.3 2.7-6 6-6h16c3.3 0 6 2.7 6 6v8c0 3.3-2.7 6-6 6h-6l-5 5v-5h-5c-3.3 0-6-2.7-6-6z" fill="white" opacity="0.95"/>
+  <!-- Right chat bubble (slightly offset, modern overlap) -->
+  <path d="M26 30c0-2.8 2.2-5 5-5h10c2.8 0 5 2.2 5 5v6c0 2.8-2.2 5-5 5h-4l-3 3v-3h-3c-2.8 0-5-2.2-5-5z" fill="white" opacity="0.7"/>
 </svg>
