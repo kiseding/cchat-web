@@ -1,20 +1,19 @@
-FROM node:22-alpine
-
+# Stage 1: Build frontend
+FROM node:22-alpine AS builder
 WORKDIR /app
-
-# Server deps (just hono)
-COPY packages/server/package.json packages/server/
-RUN cd packages/server && npm install --omit=dev
-
-# Frontend: install + build (vite + solidjs + tailwind)
 COPY packages/app/package.json packages/app/
 RUN cd packages/app && npm install
 COPY packages/app/src packages/app/src/
 COPY packages/app/index.html packages/app/vite.config.ts packages/app/tsconfig.json packages/app/
 RUN cd packages/app && npx vite build
 
-# Server source (pure Node.js, no Bun needed)
+# Stage 2: Runtime (server only)
+FROM node:22-alpine
+WORKDIR /app
+COPY packages/server/package.json packages/server/
+RUN cd packages/server && npm install --omit=dev
 COPY packages/server/index.mjs packages/server/claude-process.ts packages/server/session.ts packages/server/
+COPY --from=builder /app/packages/app/dist packages/app/dist
 
 EXPOSE 4096
 ENV AUTH_TOKEN=cchat2web PORT=4096
