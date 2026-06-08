@@ -597,21 +597,6 @@ func main() {
 	}))
 	mux.HandleFunc("/api/sessions", apiHandler)
 	mux.HandleFunc("/api/sessions/", apiHandler)
-		path := r.URL.Path
-		if path == "/api/sessions/" || path == "/api/sessions" {
-			handleSessions(w, r)
-			return
-		}
-		if strings.HasSuffix(path, "/messages") {
-			handleMessages(w, r)
-			return
-		}
-		if strings.HasSuffix(path, "/abort") {
-			handleAbort(w, r)
-			return
-		}
-		handleSession(w, r)
-	})))
 
 	// Static files
 	staticDir := filepath.Join(filepath.Dir(os.Args[0]), "..", "app", "dist")
