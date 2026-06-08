@@ -5,17 +5,18 @@
 export AUTH_TOKEN="${1:-cchat2web}"
 export PORT="${PORT:-4096}"
 
+DIR="$(cd "$(dirname "$0")" && pwd)"
+
 echo "=== CChat-Web ==="
 echo "Server: http://localhost:$PORT"
 echo "Token: $AUTH_TOKEN"
 echo ""
 
-# Build frontend first
+# Build frontend
 echo "Building frontend..."
-cd "$(dirname "$0")/packages/app"
-bun run build
+cd "$DIR/packages/app" && bun install --silent && bun run build
 
-# Start server (serves both API and static frontend)
-cd ../server
-echo "Starting server on port $PORT..."
-bun run index.ts
+# Start server
+cd "$DIR/packages/server"
+echo "Starting on port $PORT..."
+bun run --watch index.ts
