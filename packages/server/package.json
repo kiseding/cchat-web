@@ -3,14 +3,11 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "bun run --watch index.ts",
-    "start": "bun run index.ts"
+    "dev": "node --import tsx --watch index.ts",
+    "start": "node --import tsx index.ts"
   },
   "dependencies": {
     "hono": "^4.10.7",
     "tsx": "^4.19.0"
-  },
-  "devDependencies": {
-    "@types/bun": "latest"
   }
 }

@@ -17,4 +17,4 @@ COPY --from=builder /app/packages/app/dist packages/app/dist
 
 EXPOSE 4096
 ENV AUTH_TOKEN=cchat2web PORT=4096
-CMD ["npx", "tsx", "packages/server/index.mjs"]
+CMD ["node", "--import", "tsx", "packages/server/index.ts"]

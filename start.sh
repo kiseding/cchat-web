@@ -10,13 +10,13 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 echo "=== CChat-Web ==="
 echo "Server: http://localhost:$PORT"
 echo "Token: $AUTH_TOKEN"
-echo ""
 
 # Build frontend
 echo "Building frontend..."
-cd "$DIR/packages/app" && bun install --silent && bun run build
+cd "$DIR/packages/app" && npm install --silent && npx vite build
 
 # Start server
 cd "$DIR/packages/server"
 echo "Starting on port $PORT..."
-bun run --watch index.ts
+npm install --silent
+node --import tsx index.ts
