@@ -1,10 +1,8 @@
 #!/bin/bash
 # CChat-Web Quick Start
-# Usage: ./start.sh [AUTH_TOKEN]
 
 export AUTH_TOKEN="${1:-cchat2web}"
 export PORT="${PORT:-4096}"
-
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
 echo "=== CChat-Web ==="
@@ -15,8 +13,9 @@ echo "Token: $AUTH_TOKEN"
 echo "Building frontend..."
 cd "$DIR/packages/app" && npm install --silent && npx vite build
 
-# Start server
+# Build and run Go server
 cd "$DIR/packages/server"
+echo "Building server..."
+go build -o server main.go
 echo "Starting on port $PORT..."
-npm install --silent
-node --import tsx index.ts
+exec ./server
