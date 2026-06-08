@@ -122,4 +122,4 @@ export const api = {
 
   abortSession: (sessionId: string) =>
     request<{ ok: boolean }>(`/sessions/${sessionId}/abort`, { method: "POST" }),
-
+}
