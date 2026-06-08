@@ -390,7 +390,7 @@ export function ChatPage() {
       {/* Messages */}
       <div
         ref={scrollerRef}
-        class="flex-1 min-h-0 overflow-y-auto px-4 py-6 scroll-show"
+        class="flex-1 min-h-0 overflow-y-auto px-4 py-6"
       >
         <div class="flex flex-col gap-4">
           <Show

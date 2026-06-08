@@ -1,21 +1,12 @@
 @import "tailwindcss";
 
-/* Scrollbar - hidden until container hover */
-* {
-  scrollbar-width: none;
-  scrollbar-color: transparent transparent;
-}
-.scroll-show:hover,
-.scroll-show:focus-within {
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-base) transparent;
-}
-.scroll-show::-webkit-scrollbar { width: 5px; height: 5px; }
-.scroll-show::-webkit-scrollbar-track { background: transparent; }
-.scroll-show::-webkit-scrollbar-thumb { background: transparent; border-radius: 10px; }
-.scroll-show:hover::-webkit-scrollbar-thumb,
-.scroll-show:focus-within::-webkit-scrollbar-thumb { background: var(--border-base); }
-.scroll-show::-webkit-scrollbar-thumb:hover { background: var(--text-weak); }
+/* Scrollbar - transparent, subtle on hover */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: transparent; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover,
+:hover::-webkit-scrollbar-thumb { background: var(--border-base); }
+* { scrollbar-width: thin; scrollbar-color: transparent transparent; }
 
 :root {
   --bg-base: #ffffff;
