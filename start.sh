@@ -3,23 +3,19 @@
 # Usage: ./start.sh [AUTH_TOKEN]
 
 export AUTH_TOKEN="${1:-cchat2web}"
+export PORT="${PORT:-4096}"
 
 echo "=== CChat-Web ==="
-echo "Bridge server: http://localhost:5173"
-echo "Frontend: http://localhost:4096"
+echo "Server: http://localhost:$PORT"
 echo "Token: $AUTH_TOKEN"
 echo ""
 
-# Start bridge server
-cd "$(dirname "$0")/packages/server"
-bun run index.ts &
-BRIDGE_PID=$!
+# Build frontend first
+echo "Building frontend..."
+cd "$(dirname "$0")/packages/app"
+bun run build
 
-# Start frontend
-cd ../app
-bun run dev --host &
-FRONTEND_PID=$!
-
-echo "Press Ctrl+C to stop"
-trap "kill $BRIDGE_PID $FRONTEND_PID 2>/dev/null; exit" INT
-wait
+# Start server (serves both API and static frontend)
+cd ../server
+echo "Starting server on port $PORT..."
+bun run index.ts

@@ -2,6 +2,7 @@
 process.on("unhandledRejection", (err) => console.error("unhandled rejection:", err))
 process.on("uncaughtException", (err) => console.error("uncaught exception:", err))
 
+import { join } from "node:path"
 import { Hono } from "hono"
 import { cors } from "hono/cors"
 import { randomUUIDv7 } from "bun"
@@ -261,11 +262,26 @@ function truncateOutput(output: string, maxLen = 5000): string {
   return output.slice(0, maxLen) + `\n... [truncated]`
 }
 
-const port = parseInt(process.env.PORT || "5173")
-console.log(`Bridge server starting on http://localhost:${port}`)
+const port = parseInt(process.env.PORT || "4096")
+const staticDir = join(import.meta.dir, "..", "app", "dist")
+
+// Merge static file serving with API
+const mergedFetch = async (req: Request) => {
+  const url = new URL(req.url)
+  // API routes
+  if (url.pathname.startsWith("/api/")) return app.fetch(req)
+  // Static files
+  const filePath = join(staticDir, url.pathname === "/" ? "index.html" : url.pathname)
+  const file = Bun.file(filePath)
+  if (await file.exists()) return new Response(file)
+  // SPA fallback
+  return new Response(Bun.file(join(staticDir, "index.html")))
+}
+
+console.log(`CChat-Web server starting on http://localhost:${port}`)
 
 Bun.serve({
   hostname: "0.0.0.0",
   port,
-  fetch: app.fetch,
+  fetch: mergedFetch,
 })

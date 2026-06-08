@@ -2,17 +2,13 @@ services:
   cchat-web:
     build: .
     ports:
-      - "4096:4096"
-      - "5173:5173"
+      - "${PORT:-4096}:4096"
     environment:
       - AUTH_TOKEN=${AUTH_TOKEN:-cchat2web}
-      - PORT=5173
+      - PORT=4096
       - CLAUDE_PATH=/usr/local/bin/claude
     volumes:
-      # Mount Claude Code binary from host
       - ${CLAUDE_PATH:-/usr/bin/claude}:/usr/local/bin/claude:ro
-      # Mount Claude Code config with API credentials
       - ${HOME}/.claude:/root/.claude
-      # Persist session data
       - ./data:/root/.cchat2web
     restart: unless-stopped

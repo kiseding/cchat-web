@@ -46,40 +46,46 @@ chmod +x start.sh
 ./start.sh 你的密码
 ```
 
+打开 `http://localhost:4096`，输入密码登录。
+
 ### 手动启动
 
 ```bash
-# 终端 1: Bridge Server（端口 5173）
-cd packages/server
-AUTH_TOKEN=你的密码 bun run index.ts
+# 构建前端
+cd packages/app && bun run build
 
-# 终端 2: 前端开发服务器（端口 4096）
-cd packages/app
-bun run dev
+# 启动服务器（同时 serve 前端 + API）
+cd ../server
+AUTH_TOKEN=你的密码 bun run index.ts
 ```
 
-打开 `http://localhost:4096`，输入密码登录。
+### 开发模式（前后端分离，支持热更新）
 
-### 其他环境变量
+```bash
+# 终端 1: Bridge Server（端口 5173，避免与 Vite 冲突）
+cd packages/server && PORT=5173 AUTH_TOKEN=你的密码 bun run index.ts
+
+# 终端 2: 前端开发服务器（端口 4096，带 HMR）
+cd packages/app && bun run dev
+```
+
+### 环境变量
 
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
 | `AUTH_TOKEN` | `cchat2web` | 登录密码 |
-| `PORT` | `5173` | Bridge Server 端口 |
+| `PORT` | `4096` | 服务器端口 |
 | `CLAUDE_PATH` | `claude` | Claude Code 可执行文件路径 |
 
 ### Docker
 
 ```bash
-# 需要主机已安装 Claude Code，且配置好 API key (~/.claude/)
 docker compose up -d
 ```
 
-> **注意**：Claude Code 通过 volume mount 从主机挂载进容器。首次使用请确保 `~/.claude/` 下有有效的 API 凭据。
-
 ### 外网访问
 
-Vite 默认绑定 `0.0.0.0`，局域网可通过 IP 直接访问 `http://<IP>:4096`。
+服务器绑定 `0.0.0.0`，局域网可直接通过 IP 访问 `http://<IP>:4096`。
 
 ## 架构
 

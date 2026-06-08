@@ -9,7 +9,7 @@ export default defineConfig({
     port: 4096,
     allowedHosts: ["ai.kiseding.top", "kiseding.top"],
     proxy: {
-      "/api": "http://127.0.0.1:5173",
+      "/api": `http://127.0.0.1:${process.env.BRIDGE_PORT || "5173"}`,
     },
   },
 })
