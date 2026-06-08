@@ -70,7 +70,7 @@ function Sidebar(props: { open: boolean; onClose: () => void; showConfirm: (msg:
 
   return (
     <div
-      class="fixed inset-y-0 left-0 z-40 w-[360px] flex flex-col transition-transform duration-300 ease-out"
+      class="fixed inset-y-0 left-0 z-40 w-[340px] flex flex-col transition-transform duration-300 ease-out"
       style={{
         background: "var(--bg-base)",
         "border-right": "1px solid var(--border-base)",
