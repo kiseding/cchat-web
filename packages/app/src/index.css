@@ -88,4 +88,6 @@ body { background: var(--bg-base); color: var(--text-base); }
   .prose h1 { font-size: 1.15em; }
   .prose h2 { font-size: 1.05em; }
   .prose pre { font-size: 0.8em; padding: 0.6em 0.8em; }
+  .prose table { font-size: 0.78em; display: block; overflow-x: auto; white-space: nowrap; }
+  .prose th, .prose td { padding: 0.25em 0.4em; }
 }
