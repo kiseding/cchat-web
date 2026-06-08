@@ -4,12 +4,12 @@ import { api, type SessionInfo } from "../api/client"
 
 function ConfirmDialog(props: { message: string; confirmLabel?: string; confirmColor?: string; onConfirm: () => void; onCancel: () => void }) {
   return (
-    <div class="fixed inset-0 z-50 flex items-center justify-center" style="background: rgba(0,0,0,0.5)" onClick={props.onCancel}>
-      <div class="rounded-2xl p-6 w-80 shadow-lg flex flex-col gap-5" style="background: var(--bg-base); border: 1px solid var(--border-base)" onClick={e => e.stopPropagation()}>
+    <div class="fixed inset-0 z-50 flex items-center justify-center animate-in fade-in duration-200" style="background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px)" onClick={props.onCancel}>
+      <div class="rounded-2xl p-6 w-80 shadow-xl flex flex-col gap-5 animate-in zoom-in-95 duration-200" style="background: var(--bg-base); border: 1px solid var(--border-base)" onClick={e => e.stopPropagation()}>
         <p class="text-[15px] text-center" style="color: var(--text-strong)">{props.message}</p>
         <div class="flex gap-3 justify-center">
-          <button onClick={props.onCancel} class="px-5 py-2 rounded-lg text-[15px] cursor-pointer" style="background: var(--bg-stronger); color: var(--text-[17px])">Cancel</button>
-          <button onClick={props.onConfirm} class="px-5 py-2 rounded-lg text-[15px] font-medium cursor-pointer" style={{ background: props.confirmColor || "#dc2626", color: "white" }}>{props.confirmLabel || "Confirm"}</button>
+          <button onClick={props.onCancel} class="px-5 py-2 rounded-lg text-[15px] cursor-pointer hover:opacity-80 transition-opacity" style="background: var(--bg-stronger); color: var(--text-base)">Cancel</button>
+          <button onClick={props.onConfirm} class="px-5 py-2 rounded-lg text-[15px] font-medium cursor-pointer hover:opacity-80 transition-opacity" style={{ background: props.confirmColor || "#dc2626", color: "white" }}>{props.confirmLabel || "Confirm"}</button>
         </div>
       </div>
     </div>
@@ -19,8 +19,8 @@ function ConfirmDialog(props: { message: string; confirmLabel?: string; confirmC
 function NewSessionDialog(props: { creating: boolean; nameError: string; name: string; onInput: (v: string) => void; onCreate: () => void; onClose: () => void }) {
   let nameInputRef!: HTMLInputElement
   return (
-    <div class="fixed inset-0 z-50 flex items-center justify-center" style="background: rgba(0,0,0,0.5)" onClick={props.onClose}>
-      <div class="rounded-2xl p-5 w-80 shadow-lg flex flex-col gap-4" style="background: var(--bg-base); border: 1px solid var(--border-base)" onClick={e => e.stopPropagation()}>
+    <div class="fixed inset-0 z-50 flex items-center justify-center animate-in fade-in duration-200" style="background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px)" onClick={props.onClose}>
+      <div class="rounded-2xl p-5 w-80 shadow-xl flex flex-col gap-4 animate-in zoom-in-95 duration-200" style="background: var(--bg-base); border: 1px solid var(--border-base)" onClick={e => e.stopPropagation()}>
         <h3 class="text-[15px] font-semibold" style="color: var(--text-strong)">New Session</h3>
         <input ref={nameInputRef} type="text" value={props.name} onInput={e => { props.onInput(e.currentTarget.value) }}
           onKeyDown={e => { e.key === "Enter" && props.onCreate(); e.key === "Escape" && props.onClose() }}
