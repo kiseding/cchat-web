@@ -24,7 +24,11 @@ function ConfirmDialog(props: { message: string; confirmLabel?: string; confirmC
   const [closing, setClosing] = createSignal(false)
   const close = (fn: () => void) => {
     setClosing(true)
-    setTimeout(fn, 180)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setTimeout(fn, 200)
+      })
+    })
   }
   return (
     <DialogOverlay closing={closing()} onClose={() => close(props.onCancel)}>
@@ -42,7 +46,10 @@ function ConfirmDialog(props: { message: string; confirmLabel?: string; confirmC
 function NewSessionDialog(props: { creating: boolean; nameError: string; name: string; onInput: (v: string) => void; onCreate: () => void; onClose: () => void }) {
   let nameInputRef!: HTMLInputElement
   const [closing, setClosing] = createSignal(false)
-  const close = () => { setClosing(true); setTimeout(props.onClose, 180) }
+  const close = () => {
+    setClosing(true)
+    requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(props.onClose, 200)))
+  }
   return (
     <DialogOverlay closing={closing()} onClose={close}>
       <div class="rounded-2xl p-5 w-80 shadow-xl flex flex-col gap-4" style="background: var(--bg-base); border: 1px solid var(--border-base)">
@@ -54,7 +61,10 @@ function NewSessionDialog(props: { creating: boolean; nameError: string; name: s
         <Show when={props.nameError}><p class="text-[13px]" style={{ color: "#dc2626" }}>{props.nameError}</p></Show>
         <div class="flex gap-2 justify-end">
           <button onClick={close} class="px-4 py-2 rounded-lg text-[15px] cursor-pointer" style={{ background: "var(--bg-stronger)", color: "var(--text-base)" }}>Cancel</button>
-          <button onClick={() => { close(); setTimeout(props.onCreate, 180) }} disabled={props.creating} class="px-4 py-2 rounded-lg text-[15px] font-medium cursor-pointer disabled:opacity-50" style={{ background: "#34d399", color: "white" }}>Create</button>
+          <button onClick={() => {
+            setClosing(true)
+            requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(props.onCreate, 200)))
+          }} disabled={props.creating} class="px-4 py-2 rounded-lg text-[15px] font-medium cursor-pointer disabled:opacity-50" style={{ background: "#34d399", color: "white" }}>Create</button>
         </div>
       </div>
     </div>
