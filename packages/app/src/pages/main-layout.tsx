@@ -1,4 +1,4 @@
-import { createSignal, createResource, For, Show } from "solid-js"
+import { createSignal, createResource, createEffect, For, Show } from "solid-js"
 import { useNavigate, useParams } from "@solidjs/router"
 import { api, type SessionInfo } from "../api/client"
 
