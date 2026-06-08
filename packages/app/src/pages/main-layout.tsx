@@ -36,11 +36,11 @@ function NewSessionDialog(props: { creating: boolean; nameError: string; name: s
   )
 }
 
-function Sidebar(props: { open: boolean; onClose: () => void; showConfirm: (msg: string, label?: string, color?: string) => Promise<boolean>; onNewSession: () => void }) {
+function Sidebar(props: { open: boolean; onClose: () => void; showConfirm: (msg: string, label?: string, color?: string) => Promise<boolean>; onNewSession: () => void; refreshTick: number }) {
   const _showConfirm = props.showConfirm
   const navigate = useNavigate()
   const params = useParams<{ id?: string }>()
-  const [sessions, { refetch, mutate }] = createResource(api.listSessions)
+  const [sessions, { refetch, mutate }] = createResource(() => props.refreshTick, api.listSessions)
   const [deleting, setDeleting] = createSignal<Set<string>>(new Set())
 
   async function deleteSession(id: string) {
@@ -116,6 +116,7 @@ export function MainLayout(props: { children: any }) {
   const navigate = useNavigate()
   const params = useParams<{ id?: string }>()
   const [sidebarOpen, setSidebarOpen] = createSignal(false)
+  const [refreshTick, setRefreshTick] = createSignal(0)
   const [confirmMsg, setConfirmMsg] = createSignal("")
   const [confirmLabel, setConfirmLabel] = createSignal("Confirm")
   const [confirmColor, setConfirmColor] = createSignal("#dc2626")
@@ -138,6 +139,7 @@ export function MainLayout(props: { children: any }) {
       const session = await api.createSession(newSessionName().trim() || undefined)
       navigate(`/chat/${session.id}`)
       setShowNewDialog(false)
+      setRefreshTick(t => t + 1)
     } catch (err: any) {
       setCreating(false)
       if (err.message?.includes("already exists")) setNewSessionError("Name already taken.")
@@ -169,7 +171,7 @@ export function MainLayout(props: { children: any }) {
         <div class="fixed inset-0 z-30" style="background: rgba(0,0,0,0.3)" onClick={() => setSidebarOpen(false)} />
       </Show>
 
-      <Sidebar open={sidebarOpen()} onClose={() => setSidebarOpen(false)} showConfirm={showConfirm} onNewSession={openNewDialog} />
+      <Sidebar open={sidebarOpen()} onClose={() => setSidebarOpen(false)} showConfirm={showConfirm} onNewSession={openNewDialog} refreshTick={refreshTick()} />
 
       <header class="shrink-0 flex items-center gap-3 px-3 h-12 border-b" style="border-color: var(--border-base); background: var(--bg-raised)">
         <button

@@ -275,6 +275,16 @@ export function ChatPage() {
     const text = input().trim()
     if (!text || sending()) return
 
+    // Auto-create session if on home page
+    let sid = params.id
+    if (!sid) {
+      try {
+        const s = await api.createSession()
+        sid = s.id
+        navigate(`/chat/${s.id}`, { replace: true })
+      } catch { return }
+    }
+
     setInput("")
     setSending(true)
     setStreamingText("")
@@ -290,7 +300,7 @@ export function ChatPage() {
     scrollToBottom()
 
     try {
-      await api.sendMessage(params.id, text, (evt) => {
+      await api.sendMessage(sid, text, (evt) => {
         switch (evt.event) {
           case "init":
             if (evt.data.permissionMode) setPermissionMode(evt.data.permissionMode)
@@ -444,7 +454,7 @@ export function ChatPage() {
             }
           >
             <button onClick={async () => {
-              await api.abortSession(params.id)
+              await api.abortSession(sid)
               setSending(false)
             }}
               class="shrink-0 px-5 py-3 rounded-2xl font-medium text-sm transition-all cursor-pointer"

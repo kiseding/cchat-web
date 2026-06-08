@@ -226,10 +226,10 @@ func getSession(id string) (*SessionMeta, error) {
 func createSession(id, name string) (*SessionMeta, error) {
 	ensureDir()
 	now := time.Now().UnixMilli()
-	s := SessionMeta{ID: id, Title: name, CreatedAt: now, UpdatedAt: now}
 	if name == "" {
-		s.Title = "New Session"
+		name = "New Session-" + id[:8]
 	}
+	s := SessionMeta{ID: id, Title: name, CreatedAt: now, UpdatedAt: now}
 	data, _ := json.Marshal(s)
 	return &s, os.WriteFile(filepath.Join(sessionsDir, id+".json"), data, 0644)
 }
