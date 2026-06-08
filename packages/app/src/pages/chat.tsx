@@ -123,7 +123,7 @@ function MessageBubble(props: { message: Message }) {
             <>
               <Show when={block.type === "text" && block.text}>
                 <div class="flex flex-col items-start">
-                  <div class="max-w-[85%] rounded-2xl rounded-bl-md px-[15px] py-1.5" style="background: var(--bg-raised); color: var(--text-base); border: 1px solid var(--border-base)">
+                  <div class="max-w-[92%] sm:max-w-[85%] rounded-2xl rounded-bl-md px-[15px] py-1.5" style="background: var(--bg-raised); color: var(--text-base); border: 1px solid var(--border-base)">
                     <MarkdownContent text={block.text!} />
                   </div>
                 </div>
@@ -144,7 +144,7 @@ function MessageBubble(props: { message: Message }) {
   return (
     <div class="flex flex-col" classList={{ "items-end": isUser(), "items-start": !isUser() }}>
       <div
-        class="max-w-[85%] rounded-2xl px-[15px] py-1.5"
+        class="max-w-[92%] sm:max-w-[85%] rounded-2xl px-[15px] py-1.5"
         classList={{ "rounded-br-md": isUser(), "rounded-bl-md": !isUser() }}
         style={isUser()
           ? "background: var(--accent); color: white"
@@ -391,7 +391,7 @@ export function ChatPage() {
       {/* Messages */}
       <div
         ref={scrollerRef}
-        class="flex-1 min-h-0 overflow-y-auto px-4 py-6"
+        class="flex-1 min-h-0 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6"
       >
         <div class="flex flex-col gap-4">
           <Show
@@ -411,7 +411,7 @@ export function ChatPage() {
             <Show when={sending()}>
               <div class="flex flex-col items-start">
                 <div
-                  class="max-w-[85%] rounded-2xl rounded-bl-md px-[15px] py-1.5"
+                  class="max-w-[92%] sm:max-w-[85%] rounded-2xl rounded-bl-md px-[15px] py-1.5"
                   style="background: var(--bg-raised); color: var(--text-base); border: 1px solid var(--border-base)"
                 >
                   <Show when={thinkingTokens() > 0}>
@@ -450,7 +450,7 @@ export function ChatPage() {
 
       {/* Input */}
       <div
-        class="shrink-0 px-3 pt-4 pb-2 mx-3 mb-3 rounded-2xl"
+        class="shrink-0 px-2 sm:px-3 pt-3 sm:pt-4 pb-2 mx-2 sm:mx-3 mb-2 sm:mb-3 rounded-2xl"
         style="background: var(--bg-raised); border: 1px solid var(--border-base)"
       >
         <div class="flex gap-3 items-end">
@@ -467,7 +467,7 @@ export function ChatPage() {
             placeholder=""
             rows={1}
             disabled={sending()}
-            class="flex-1 resize-none rounded-2xl px-4 py-3 text-sm outline-none transition-all disabled:opacity-50"
+            class="flex-1 resize-none rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm outline-none transition-all disabled:opacity-50"
             style={{
               background: "var(--bg-base)",
               color: "var(--text-strong)",
