@@ -68,6 +68,15 @@ bun run dev
 | `PORT` | `5173` | Bridge Server 端口 |
 | `CLAUDE_PATH` | `claude` | Claude Code 可执行文件路径 |
 
+### Docker
+
+```bash
+# 需要主机已安装 Claude Code，且配置好 API key (~/.claude/)
+docker compose up -d
+```
+
+> **注意**：Claude Code 通过 volume mount 从主机挂载进容器。首次使用请确保 `~/.claude/` 下有有效的 API 凭据。
+
 ### 外网访问
 
 Vite 默认绑定 `0.0.0.0`，局域网可通过 IP 直接访问 `http://<IP>:4096`。
