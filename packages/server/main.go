@@ -97,7 +97,7 @@ func startClaude(sessionID string) (*ClaudeProcess, error) {
 		"--input-format", "stream-json",
 		"--output-format", "stream-json",
 		"-p", "--verbose",
-		"--permission-mode", "acceptEdits",
+		"--permission-mode", "bypassPermissions",
 		"--tools", "Task,Bash,CronCreate,CronDelete,CronList,Edit,EnterPlanMode,EnterWorktree,ExitPlanMode,ExitWorktree,Glob,Grep,NotebookEdit,Read,ScheduleWakeup,Skill,TaskCreate,TaskGet,TaskList,TaskOutput,TaskStop,TaskUpdate,WebFetch,WebSearch,Workflow,Write",
 		"--append-system-prompt", choiceRule,
 	)
@@ -425,7 +425,7 @@ func handleMessages(w http.ResponseWriter, r *http.Request) {
 		"--input-format", "stream-json",
 		"--output-format", "stream-json",
 		"-p", "--verbose",
-		"--permission-mode", "acceptEdits",
+		"--permission-mode", "bypassPermissions",
 		"--tools", "Task,Bash,CronCreate,CronDelete,CronList,Edit,EnterPlanMode,EnterWorktree,ExitPlanMode,ExitWorktree,Glob,Grep,NotebookEdit,Read,ScheduleWakeup,Skill,TaskCreate,TaskGet,TaskList,TaskOutput,TaskStop,TaskUpdate,WebFetch,WebSearch,Workflow,Write",
 		"--append-system-prompt", choiceRule,
 	)
