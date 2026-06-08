@@ -1,4 +1,4 @@
-import { createSignal, Show } from "solid-js"
+import { createSignal, createEffect, Show } from "solid-js"
 import { hasToken, setToken } from "./api/client"
 
 function LoginPage(props: { onLogin: () => void }) {
@@ -54,9 +54,13 @@ function LoginPage(props: { onLogin: () => void }) {
 export function AppLayout(props: { children: any; params?: any; location?: any; data?: any }) {
   const [loggedIn, setLoggedIn] = createSignal(hasToken())
 
+  // Re-check token when component re-renders (handles mobile navigation edge cases)
+  const checkLogin = () => hasToken()
+  createEffect(() => { if (!checkLogin() && loggedIn()) setLoggedIn(false) })
+
   return (
     <Show when={loggedIn()} fallback={<LoginPage onLogin={() => setLoggedIn(true)} />}>
-      <div class="h-dvh w-screen flex flex-col overflow-hidden" style="background: var(--bg-base); color: var(--text-[17px])}">
+      <div class="h-dvh w-screen flex flex-col overflow-hidden" style="background: var(--bg-base); color: var(--text-base)">
         {props.children}
       </div>
     </Show>

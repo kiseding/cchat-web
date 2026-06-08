@@ -135,7 +135,7 @@ function Sidebar(props: { open: boolean; onClose: () => void; showConfirm: (msg:
                     "max-height": deleting().has(session.id) ? "0px" : "60px",
                   }}
                 >
-                  <div onClick={() => { navigate(`/chat/${session.id}`); props.onClose() }} class="min-w-0 flex-1 cursor-pointer">
+                  <div onClick={() => { props.onClose(); setTimeout(() => navigate(`/chat/${session.id}`), 300) }} class="min-w-0 flex-1 cursor-pointer">
                     <div class="text-[15px] truncate" style={{ color: "var(--text-strong)" }}>{session.title || "Untitled"}</div>
                     <div class="text-[13px]" style="color: var(--text-weak)">{session.messageCount} msgs · {formatDate(session.updatedAt)}</div>
                   </div>
