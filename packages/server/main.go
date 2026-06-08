@@ -527,7 +527,7 @@ done:
 		assistantMsg := SessionMessage{ID: uuid(), Role: "assistant", Content: fullText, Parts: contentBlocks, Timestamp: time.Now().UnixMilli()}
 		appendMessage(id, assistantMsg)
 		msgs, _ := getMessages(id)
-		updateSession(id, generateTitle(text), len(msgs))
+		updateSession(id, "", len(msgs))
 	}
 }
 
