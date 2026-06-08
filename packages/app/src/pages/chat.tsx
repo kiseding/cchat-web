@@ -169,82 +169,6 @@ function MessageBubble(props: { message: Message }) {
   )
 }
 
-function QuestionDialog(props: { question: any; onAnswer: (ans: Record<string, string>) => void; onClose: () => void }) {
-  const qs = () => props.question?.question?.questions || []
-  const [answers, setAnswers] = createSignal<Record<string, string>>({})
-  const [otherTexts, setOtherTexts] = createSignal<Record<string, string>>({})
-  const allAnswered = () => qs().every((q: any) => {
-    const key = q.header || q.question
-    const hasOther = (q.options || []).some((o: any) => (typeof o === "object" && o.isOther))
-    if (hasOther) return !!answers()[key] || !!otherTexts()[key]
-    return !!answers()[key]
-  })
-
-  function selectAnswer(key: string, value: string, isOther?: boolean) {
-    if (isOther) {
-      setOtherTexts(prev => ({ ...prev, [key]: value }))
-      setAnswers(prev => ({ ...prev, [key]: value }))
-    } else {
-      setOtherTexts(prev => { const n = { ...prev }; delete n[key]; return n })
-      setAnswers(prev => ({ ...prev, [key]: value }))
-    }
-  }
-
-  return (
-    <div class="fixed inset-0 z-50 flex items-center justify-center" style="background: rgba(0,0,0,0.5)" onClick={props.onClose}>
-      <div class="rounded-xl p-5 max-w-lg w-full mx-4 shadow-lg flex flex-col gap-4 max-h-[80vh] overflow-y-auto" style="background: var(--bg-base); border: 1px solid var(--border-base)" onClick={e => e.stopPropagation()}>
-        <h3 class="font-semibold text-[15px]" style="color: var(--text-strong)">Claude needs your input</h3>
-        <For each={qs()}>
-          {(q: any) => {
-            const key = q.header || q.question
-            const selected = () => answers()[key]
-            const hasOther = (q.options || []).some((o: any) => (typeof o === "object" && o.isOther))
-            const isOther = () => !!otherTexts()[key]
-            return (
-              <div class="flex flex-col gap-2">
-                <p class="text-[15px] font-medium" style="color: var(--text-strong)">{q.question}</p>
-                <Show when={q.description}><p class="text-[13px]" style="color: var(--text-weak)">{q.description}</p></Show>
-                <div class="flex flex-col gap-1">
-                  <For each={q.options || []}>
-                    {(opt: any) => {
-                      const label = typeof opt === "string" ? opt : (opt.label || "")
-                      const desc = typeof opt === "object" ? opt.description : ""
-                      const isOtherOption = typeof opt === "object" && opt.isOther
-                      if (isOtherOption) {
-                        return (
-                          <div class="flex gap-2 items-center">
-                            <input type="text"
-                              value={otherTexts()[key] || ""}
-                              onInput={e => selectAnswer(key, e.currentTarget.value, true)}
-                              placeholder={label || "Other..."}
-                              class="flex-1 px-3 py-2 rounded-lg text-[15px] outline-none"
-                              style={{ background: "var(--bg-raised)", color: "var(--text-strong)", border: `1px solid ${isOther() ? "var(--accent)" : "var(--border-base)"}` }}
-                            />
-                          </div>
-                        )
-                      }
-                      return (
-                        <button onClick={() => selectAnswer(key, label)}
-                          class="text-left px-3 py-2 rounded-lg text-[15px] cursor-pointer transition-colors"
-                          style={selected() === label && !isOther() ? { background: "var(--accent)", color: "white" } : { background: "var(--bg-stronger)", color: "var(--text-strong)" }}>
-                          <span class="font-medium">{label}</span>
-                          <Show when={desc}><span class="block text-[13px] mt-0.5 opacity-70">{desc}</span></Show>
-                        </button>
-                      )
-                    }}
-                  </For>
-                </div>
-              </div>
-            )
-          }}
-        </For>
-        <button onClick={() => props.onAnswer(answers())} disabled={!allAnswered()}
-          class="px-4 py-2 rounded-lg text-[15px] font-medium cursor-pointer disabled:opacity-40"
-          style="background: var(--accent); color: white">Submit</button>
-      </div>
-    </div>
-  )
-}
 
 export function ChatPage() {
   const params = useParams<{ id: string }>()
@@ -255,7 +179,6 @@ export function ChatPage() {
   const [thinkingTokens, setThinkingTokens] = createSignal(0)
   const [streamingTools, setStreamingTools] = createSignal<Array<{type:"tool_call"|"tool_result",toolName?:string,toolInput?:any,toolOutput?:string,toolId?:string}>>([])
   const [permissionMode, setPermissionMode] = createSignal("bypassPermissions")
-  const [question, setQuestion] = createSignal<any>(null)
   const [optimisticUserMsg, setOptimisticUserMsg] = createSignal<Message | null>(null)
   const [sessionData, { refetch, mutate }] = createResource(
     () => params.id || null,
@@ -331,10 +254,6 @@ export function ChatPage() {
           case "tool-end":
             setStreamingTools(prev => [...prev, { type: "tool_result", toolOutput: evt.data.output, toolId: evt.data.toolId }])
             scrollToBottom()
-            break
-          case "question":
-            console.log("Question received, opening dialog:", evt.data)
-            setQuestion({ ...evt.data, sessionId: params.id })
             break
         }
       })

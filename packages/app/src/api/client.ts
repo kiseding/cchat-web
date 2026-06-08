@@ -123,9 +123,3 @@ export const api = {
   abortSession: (sessionId: string) =>
     request<{ ok: boolean }>(`/sessions/${sessionId}/abort`, { method: "POST" }),
 
-  answerQuestion: (sessionId: string, toolId: string, answer: Record<string, string>) =>
-    request<{ ok: boolean }>(`/sessions/${sessionId}/answer`, {
-      method: "POST",
-      body: JSON.stringify({ toolId, answer }),
-    }),
-}

@@ -51,6 +51,8 @@ var (
 	authToken      = getEnv("AUTH_TOKEN", "cchat2web")
 	port           = getEnv("PORT", "4096")
 	claudePath     = getEnv("CLAUDE_PATH", "claude")
+	runningCmd     = map[string]*exec.Cmd{}
+	rcMu           sync.Mutex
 	sessionsDir    = filepath.Join(os.Getenv("HOME"), ".cchat2web", "sessions")
 	processes      = map[string]*ClaudeProcess{}
 	procMu         sync.Mutex
@@ -438,6 +440,9 @@ func handleMessages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+		rcMu.Lock()
+		runningCmd[id] = cmd
+		rcMu.Unlock()
 	if err := cmd.Start(); err != nil {
 		sendSSE(w, flusher, "error", map[string]string{"message": err.Error()})
 		return
@@ -516,6 +521,9 @@ func handleMessages(w http.ResponseWriter, r *http.Request) {
 	}
 done:
 	cmd.Wait()
+		rcMu.Lock()
+		delete(runningCmd, id)
+		rcMu.Unlock()
 
 	// Save assistant message
 	fullText := ""
@@ -536,17 +544,12 @@ done:
 func handleAbort(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimPrefix(r.URL.Path, "/api/sessions/")
 	id = strings.Split(id, "/")[0]
-	spMu.Lock()
-	if cid, ok := sessionProcMap[id]; ok {
-		procMu.Lock()
-		if p, ok := processes[cid]; ok {
-			p.kill()
-			delete(processes, cid)
-		}
-		procMu.Unlock()
-		delete(sessionProcMap, id)
+	rcMu.Lock()
+	if cmd, ok := runningCmd[id]; ok {
+		cmd.Process.Kill()
+		delete(runningCmd, id)
 	}
-	spMu.Unlock()
+	rcMu.Unlock()
 	writeJSON(w, 200, map[string]bool{"ok": true})
 }
 
