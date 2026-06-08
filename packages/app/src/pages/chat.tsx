@@ -342,22 +342,25 @@ export function ChatPage() {
       console.error("Send error:", err)
     } finally {
       setSending(false)
-      // Build assistant message from streaming data and append locally
+      // Append user + assistant messages locally (no flash)
       const finalText = streamingText()
       const finalTools = streamingTools()
-      if (finalText || finalTools.length > 0) {
-        const cur = sessionData()
-        if (cur) {
-          const parts: any[] = []
-          if (finalTools.length > 0) {
-            for (const t of finalTools) {
-              if (t.type === "tool_call") parts.push({ type: "tool_call", toolName: t.toolName, toolInput: t.toolInput, toolId: t.toolId })
-              else parts.push({ type: "tool_result", toolOutput: t.toolOutput, toolId: t.toolId })
-            }
+      const cur = sessionData()
+      if (cur) {
+        const parts: any[] = []
+        if (finalTools.length > 0) {
+          for (const t of finalTools) {
+            if (t.type === "tool_call") parts.push({ type: "tool_call", toolName: t.toolName, toolInput: t.toolInput, toolId: t.toolId })
+            else parts.push({ type: "tool_result", toolOutput: t.toolOutput, toolId: t.toolId })
           }
-          const assistantMsg = { id: "local-" + Date.now(), role: "assistant", content: finalText, parts, timestamp: Date.now() }
-          mutate({ ...cur, messages: [...cur.messages, assistantMsg] })
         }
+        const newMsgs = [...cur.messages]
+        // Remove optimistic, add real user + assistant
+        newMsgs.push({ id: "user-" + Date.now(), role: "user", content: text, timestamp: Date.now() })
+        if (finalText || parts.length > 0) {
+          newMsgs.push({ id: "assistant-" + Date.now(), role: "assistant", content: finalText, parts, timestamp: Date.now() })
+        }
+        mutate({ ...cur, messages: newMsgs })
       }
       setStreamingText("")
       setThinkingTokens(0)
