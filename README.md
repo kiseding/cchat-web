@@ -20,8 +20,16 @@ Claude Code 的 Web 聊天界面。通过 HTTP + SSE 桥接 Claude Code CLI 的 
 
 ### 前置条件
 
-- [Bun](https://bun.sh) 1.3+
-- [Claude Code](https://github.com/anomalyco/opencode) CLI（非 Anthropic API）
+- **Bun** ≥ 1.3 — [安装指南](https://bun.sh)
+- **Claude Code CLI** — 确保 `claude` 命令在 PATH 中
+  ```bash
+  # 验证安装
+  claude --version
+  ```
+  如果 `claude` 不在默认 PATH，设置环境变量：
+  ```bash
+  export CLAUDE_PATH=/path/to/claude
+  ```
 
 ### 安装
 
@@ -31,28 +39,38 @@ cd cchat-web
 bun install
 ```
 
-### 启动
+### 一键启动
 
 ```bash
-# 终端 1: 启动 Bridge Server（端口 5173）
+chmod +x start.sh
+./start.sh 你的密码
+```
+
+### 手动启动
+
+```bash
+# 终端 1: Bridge Server（端口 5173）
 cd packages/server
 AUTH_TOKEN=你的密码 bun run index.ts
 
-# 终端 2: 启动前端开发服务器（端口 4096）
+# 终端 2: 前端开发服务器（端口 4096）
 cd packages/app
 bun run dev
 ```
 
 打开 `http://localhost:4096`，输入密码登录。
 
+### 其他环境变量
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `AUTH_TOKEN` | `cchat2web` | 登录密码 |
+| `PORT` | `5173` | Bridge Server 端口 |
+| `CLAUDE_PATH` | `claude` | Claude Code 可执行文件路径 |
+
 ### 外网访问
 
-Vite 开发服务器默认绑定 `0.0.0.0`，局域网内可通过 IP 访问：
-```
-http://192.168.x.x:4096
-```
-
-通过 Cloudflare 等反向代理访问时，需确保代理端口支持。
+Vite 默认绑定 `0.0.0.0`，局域网可通过 IP 直接访问 `http://<IP>:4096`。
 
 ## 架构
 

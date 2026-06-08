@@ -1,7 +1,7 @@
 import { spawn, type ChildProcess } from "node:child_process"
 import { EventEmitter } from "node:events"
 
-const CLAUDE_PATH = "/usr/bin/claude"
+const CLAUDE_PATH = process.env.CLAUDE_PATH || "claude"
 
 export interface ClaudeProcessEvent {
   type: "init" | "thinking" | "text-delta" | "text-start" | "text-end" |
