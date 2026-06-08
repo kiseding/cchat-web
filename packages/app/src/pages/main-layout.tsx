@@ -79,7 +79,7 @@ function Sidebar(props: { open: boolean; onClose: () => void; showConfirm: (msg:
   const _showConfirm = props.showConfirm
   const navigate = useNavigate()
   const params = useParams<{ id?: string }>()
-  const [sessions, { refetch, mutate }] = createResource(() => props.refreshTick, api.listSessions)
+  const [sessions, { refetch, mutate }] = createResource(() => props.refreshTick + 1, api.listSessions)
   const [deleting, setDeleting] = createSignal<Set<string>>(new Set())
 
   async function deleteSession(id: string) {
