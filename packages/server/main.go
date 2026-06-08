@@ -227,7 +227,7 @@ func createSession(id, name string) (*SessionMeta, error) {
 	ensureDir()
 	now := time.Now().UnixMilli()
 	if name == "" {
-		name = "New Session-" + id[:8]
+		name = "Session-" + id[:8]
 	}
 	s := SessionMeta{ID: id, Title: name, CreatedAt: now, UpdatedAt: now}
 	data, _ := json.Marshal(s)
