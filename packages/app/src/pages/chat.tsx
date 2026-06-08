@@ -8,7 +8,7 @@ marked.setOptions({ breaks: true, gfm: true })
 
 function MarkdownContent(props: { text: string }) {
   const html = () => marked.parse(props.text) as string
-  return <div class="text-xl leading-relaxed prose prose-sm" style="max-width:none" innerHTML={html()} />
+  return <div class="text-xs leading-relaxed prose prose-sm" style="max-width:none" innerHTML={html()} />
 }
 
 function ToolCard(props: { tools: Array<{ name: string; input?: any; output?: string }> }) {
@@ -20,7 +20,7 @@ function ToolCard(props: { tools: Array<{ name: string; input?: any; output?: st
     <div class="my-1 rounded-lg overflow-hidden border" style="border-color: var(--border-base); background: var(--bg-raised)">
       <button
         onClick={() => setExpanded(!expanded())}
-        class="w-full flex items-center gap-2 px-3 py-1.5 text-xl font-medium cursor-pointer hover:opacity-80"
+        class="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-medium cursor-pointer hover:opacity-80"
         style="color: var(--text-weak); background: var(--bg-stronger)"
       >
         <span style="font-size:10px">{expanded() ? "▾" : "▸"}</span>
@@ -36,13 +36,13 @@ function ToolCard(props: { tools: Array<{ name: string; input?: any; output?: st
         <div class="p-2 flex flex-col gap-4">
           <For each={props.tools}>
             {(tool, i) => (
-              <div class="text-xl" style="color: var(--text-xl)">
-                <div class="font-semibold px-1 text-xl" style="color: var(--text-weak)">
+              <div class="text-xs" style="color: var(--text-xs)">
+                <div class="font-semibold px-1 text-xs" style="color: var(--text-weak)">
                   {i() + 1}. {tool.name}
                 </div>
                 <Show when={tool.input && Object.keys(tool.input).length > 0}>
                   <Show when={tool.input.command || tool.input.cmd} fallback={
-                    <pre class="whitespace-pre-wrap text-xl px-1 opacity-80 mb-1">{JSON.stringify(tool.input, null, 2)}</pre>
+                    <pre class="whitespace-pre-wrap text-xs px-1 opacity-80 mb-1">{JSON.stringify(tool.input, null, 2)}</pre>
                   }>
                     <div class="rounded-md overflow-hidden mb-1" style="background: #1a1b26; color: #a9b1d6; font-family: ui-monospace,monospace">
                       <div class="flex items-center gap-1.5 px-3 py-1.5 text-xs" style="background: #16171f">
@@ -123,7 +123,7 @@ function MessageBubble(props: { message: Message }) {
             <>
               <Show when={block.type === "text" && block.text}>
                 <div class="flex flex-col items-start">
-                  <div class="max-w-[92%] sm:max-w-[85%] rounded-2xl rounded-bl-md px-[15px] py-1.5" style="background: var(--bg-raised); color: var(--text-xl); border: 1px solid var(--border-base)">
+                  <div class="max-w-[92%] sm:max-w-[85%] rounded-2xl rounded-bl-md px-[15px] py-1.5" style="background: var(--bg-raised); color: var(--text-xs); border: 1px solid var(--border-base)">
                     <MarkdownContent text={block.text!} />
                   </div>
                 </div>
@@ -148,7 +148,7 @@ function MessageBubble(props: { message: Message }) {
         classList={{ "rounded-br-md": isUser(), "rounded-bl-md": !isUser() }}
         style={isUser()
           ? "background: var(--accent); color: white"
-          : "background: var(--bg-raised); color: var(--text-xl); border: 1px solid var(--border-base)"
+          : "background: var(--bg-raised); color: var(--text-xs); border: 1px solid var(--border-base)"
         }
       >
         <Show when={props.message.content}>
@@ -193,7 +193,7 @@ function QuestionDialog(props: { question: any; onAnswer: (ans: Record<string, s
   return (
     <div class="fixed inset-0 z-50 flex items-center justify-center" style="background: rgba(0,0,0,0.5)" onClick={props.onClose}>
       <div class="rounded-xl p-5 max-w-lg w-full mx-4 shadow-lg flex flex-col gap-4 max-h-[80vh] overflow-y-auto" style="background: var(--bg-base); border: 1px solid var(--border-base)" onClick={e => e.stopPropagation()}>
-        <h3 class="font-semibold text-xl" style="color: var(--text-strong)">Claude needs your input</h3>
+        <h3 class="font-semibold text-xs" style="color: var(--text-strong)">Claude needs your input</h3>
         <For each={qs()}>
           {(q: any) => {
             const key = q.header || q.question
@@ -202,8 +202,8 @@ function QuestionDialog(props: { question: any; onAnswer: (ans: Record<string, s
             const isOther = () => !!otherTexts()[key]
             return (
               <div class="flex flex-col gap-2">
-                <p class="text-xl font-medium" style="color: var(--text-strong)">{q.question}</p>
-                <Show when={q.description}><p class="text-xl" style="color: var(--text-weak)">{q.description}</p></Show>
+                <p class="text-xs font-medium" style="color: var(--text-strong)">{q.question}</p>
+                <Show when={q.description}><p class="text-xs" style="color: var(--text-weak)">{q.description}</p></Show>
                 <div class="flex flex-col gap-1">
                   <For each={q.options || []}>
                     {(opt: any) => {
@@ -217,7 +217,7 @@ function QuestionDialog(props: { question: any; onAnswer: (ans: Record<string, s
                               value={otherTexts()[key] || ""}
                               onInput={e => selectAnswer(key, e.currentTarget.value, true)}
                               placeholder={label || "Other..."}
-                              class="flex-1 px-3 py-2 rounded-lg text-xl outline-none"
+                              class="flex-1 px-3 py-2 rounded-lg text-xs outline-none"
                               style={{ background: "var(--bg-raised)", color: "var(--text-strong)", border: `1px solid ${isOther() ? "var(--accent)" : "var(--border-base)"}` }}
                             />
                           </div>
@@ -225,10 +225,10 @@ function QuestionDialog(props: { question: any; onAnswer: (ans: Record<string, s
                       }
                       return (
                         <button onClick={() => selectAnswer(key, label)}
-                          class="text-left px-3 py-2 rounded-lg text-xl cursor-pointer transition-colors"
+                          class="text-left px-3 py-2 rounded-lg text-xs cursor-pointer transition-colors"
                           style={selected() === label && !isOther() ? { background: "var(--accent)", color: "white" } : { background: "var(--bg-stronger)", color: "var(--text-strong)" }}>
                           <span class="font-medium">{label}</span>
-                          <Show when={desc}><span class="block text-xl mt-0.5 opacity-70">{desc}</span></Show>
+                          <Show when={desc}><span class="block text-xs mt-0.5 opacity-70">{desc}</span></Show>
                         </button>
                       )
                     }}
@@ -239,7 +239,7 @@ function QuestionDialog(props: { question: any; onAnswer: (ans: Record<string, s
           }}
         </For>
         <button onClick={() => props.onAnswer(answers())} disabled={!allAnswered()}
-          class="px-4 py-2 rounded-lg text-xl font-medium cursor-pointer disabled:opacity-40"
+          class="px-4 py-2 rounded-lg text-xs font-medium cursor-pointer disabled:opacity-40"
           style="background: var(--accent); color: white">Submit</button>
       </div>
     </div>
@@ -412,10 +412,10 @@ export function ChatPage() {
               <div class="flex flex-col items-start">
                 <div
                   class="max-w-[92%] sm:max-w-[85%] rounded-2xl rounded-bl-md px-[15px] py-1.5"
-                  style="background: var(--bg-raised); color: var(--text-xl); border: 1px solid var(--border-base)"
+                  style="background: var(--bg-raised); color: var(--text-xs); border: 1px solid var(--border-base)"
                 >
                   <Show when={thinkingTokens() > 0}>
-                    <div class="text-xl mb-1" style="color: var(--text-weak)">
+                    <div class="text-xs mb-1" style="color: var(--text-weak)">
                       Thinking... ({thinkingTokens()} tokens)
                     </div>
                   </Show>
@@ -467,7 +467,7 @@ export function ChatPage() {
             placeholder=""
             rows={1}
             disabled={sending()}
-            class="flex-1 resize-none rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 text-base sm:text-xl outline-none transition-all disabled:opacity-50"
+            class="flex-1 resize-none rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 text-[16px] sm:text-xs outline-none transition-all disabled:opacity-50"
 			style="font-size: 16px" onFocus={(e) => { setTimeout(() => { e.currentTarget.style.fontSize = "" }, 100) }}
             style={{
               background: "var(--bg-base)",
@@ -482,7 +482,7 @@ export function ChatPage() {
             when={sending()}
             fallback={
               <button onClick={send} disabled={!input().trim()}
-                class="shrink-0 px-5 py-3 rounded-2xl font-medium text-xl transition-all cursor-pointer disabled:opacity-40"
+                class="shrink-0 px-5 py-3 rounded-2xl font-medium text-xs transition-all cursor-pointer disabled:opacity-40"
                 style={{ background: "var(--accent)", color: "white" }}>Send</button>
             }
           >
@@ -490,7 +490,7 @@ export function ChatPage() {
               await api.abortSession(params.id!)
               setSending(false)
             }}
-              class="shrink-0 px-5 py-3 rounded-2xl font-medium text-xl transition-all cursor-pointer"
+              class="shrink-0 px-5 py-3 rounded-2xl font-medium text-xs transition-all cursor-pointer"
               style={{ background: "#ef4444", color: "white" }}>Stop</button>
           </Show>
         </div>
