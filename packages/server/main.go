@@ -138,8 +138,7 @@ func startClaude(sessionID string) (*ClaudeProcess, error) {
 
 			switch {
 			case msgType == "system" && subtype == "init":
-				log.Println("EVENT: init")
-			cp.Events <- ClaudeEvent{Type: "init", Data: msg}
+				cp.Events <- ClaudeEvent{Type: "init", Data: msg}
 			case msgType == "system" && subtype == "thinking_tokens":
 				cp.Events <- ClaudeEvent{Type: "thinking", Data: msg}
 			case msgType == "assistant":
@@ -411,83 +410,110 @@ func handleMessages(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 
-	proc, err := startClaude(uuid())
+	// Build Claude command with stdin piped
+	choiceRule := "IMPORTANT: When asking the user to choose, format options as: 1. ShortLabel 2. ShortLabel 3. ShortLabel on ONE line separated by spaces."
+	msgData, _ := json.Marshal(map[string]interface{}{
+		"type": "user",
+		"message": map[string]interface{}{
+			"role":    "user",
+			"content": []map[string]interface{}{{"type": "text", "text": prompt}},
+		},
+	})
+
+	cmd := exec.Command(claudePath,
+		"--input-format", "stream-json",
+		"--output-format", "stream-json",
+		"-p", "--verbose",
+		"--tools", "Task,Bash,CronCreate,CronDelete,CronList,Edit,EnterPlanMode,EnterWorktree,ExitPlanMode,ExitWorktree,Glob,Grep,NotebookEdit,Read,ScheduleWakeup,Skill,TaskCreate,TaskGet,TaskList,TaskOutput,TaskStop,TaskUpdate,WebFetch,WebSearch,Workflow,Write",
+		"--append-system-prompt", choiceRule,
+	)
+	cmd.Stdin = strings.NewReader(string(msgData) + "\n")
+	cmd.Stderr = os.Stderr
+
+	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		sendSSE(w, flusher, "error", map[string]string{"message": "Failed to start Claude"})
+		sendSSE(w, flusher, "error", map[string]string{"message": err.Error()})
 		return
 	}
-	defer proc.kill()
 
-	proc.send(prompt)
-
+	if err := cmd.Start(); err != nil {
+		sendSSE(w, flusher, "error", map[string]string{"message": err.Error()})
+		return
+	}
 	var contentBlocks []MessagePart
 	var currentText string
-	timeout := time.After(120 * time.Second)
 
-loop:
-	for {
-		select {
-		case evt := <-proc.Events:
-			log.Printf("GOT EVENT: %s", evt.Type)
-			switch evt.Type {
-			case "init":
-				sendSSE(w, flusher, "init", map[string]interface{}{"model": evt.Data["model"], "permissionMode": evt.Data["permissionMode"]})
-			case "thinking":
-				sendSSE(w, flusher, "thinking", map[string]interface{}{"tokens": evt.Data["estimated_tokens"]})
-			case "assistant":
-				msg, _ := evt.Data["message"].(map[string]interface{})
-				content, _ := msg["content"].([]interface{})
-				for _, c := range content {
-					part, _ := c.(map[string]interface{})
-					if part["type"] == "text" {
-						t, _ := part["text"].(string)
-						currentText += t
-						sendSSE(w, flusher, "text-delta", map[string]string{"text": t})
-					} else if part["type"] == "tool_use" {
-						if strings.TrimSpace(currentText) != "" {
-							contentBlocks = append(contentBlocks, MessagePart{Type: "text", Text: currentText})
-							currentText = ""
-						}
-						name, _ := part["name"].(string)
-						id, _ := part["id"].(string)
-						input, _ := part["input"].(map[string]interface{})
-						contentBlocks = append(contentBlocks, MessagePart{Type: "tool_call", ToolName: name, ToolID: id, ToolInput: input})
-						sendSSE(w, flusher, "tool-start", map[string]interface{}{"toolId": id, "toolName": name, "toolInput": input})
+	scanner := bufio.NewScanner(stdout)
+	scanner.Buffer(make([]byte, 1024*1024), 1024*1024)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+		var msg map[string]interface{}
+		if json.Unmarshal([]byte(line), &msg) != nil {
+			continue
+		}
+		msgType, _ := msg["type"].(string)
+		subtype, _ := msg["subtype"].(string)
+
+		switch {
+		case msgType == "system" && subtype == "init":
+			sendSSE(w, flusher, "init", map[string]interface{}{"model": msg["model"], "permissionMode": msg["permissionMode"]})
+		case msgType == "system" && subtype == "thinking_tokens":
+			sendSSE(w, flusher, "thinking", map[string]interface{}{"tokens": msg["estimated_tokens"]})
+		case msgType == "assistant":
+			amsg, _ := msg["message"].(map[string]interface{})
+			content, _ := amsg["content"].([]interface{})
+			for _, c := range content {
+				part, _ := c.(map[string]interface{})
+				if part["type"] == "text" {
+					t, _ := part["text"].(string)
+					currentText += t
+					sendSSE(w, flusher, "text-delta", map[string]string{"text": t})
+				} else if part["type"] == "tool_use" {
+					if strings.TrimSpace(currentText) != "" {
+						contentBlocks = append(contentBlocks, MessagePart{Type: "text", Text: currentText})
+						currentText = ""
 					}
+					name, _ := part["name"].(string)
+					id, _ := part["id"].(string)
+					input, _ := part["input"].(map[string]interface{})
+					contentBlocks = append(contentBlocks, MessagePart{Type: "tool_call", ToolName: name, ToolID: id, ToolInput: input})
+					sendSSE(w, flusher, "tool-start", map[string]interface{}{"toolId": id, "toolName": name, "toolInput": input})
 				}
-			case "tool_result":
-				msg, _ := evt.Data["message"].(map[string]interface{})
-				content, _ := msg["content"].([]interface{})
-				for _, c := range content {
-					part, _ := c.(map[string]interface{})
-					if part["type"] == "tool_result" {
-						output := ""
-						if s, ok := part["content"].(string); ok {
-							output = s
-						} else {
-							data, _ := json.Marshal(part["content"])
-							output = string(data)
-						}
-						if len(output) > 5000 {
-							output = output[:5000] + "\n... [truncated]"
-						}
-						id, _ := part["tool_use_id"].(string)
-						contentBlocks = append(contentBlocks, MessagePart{Type: "tool_result", ToolID: id, ToolOutput: output})
-						sendSSE(w, flusher, "tool-end", map[string]interface{}{"toolId": id, "output": output})
-					}
-				}
-			case "done":
-				if strings.TrimSpace(currentText) != "" {
-					contentBlocks = append(contentBlocks, MessagePart{Type: "text", Text: currentText})
-				}
-				sendSSE(w, flusher, "done", map[string]string{})
-				break loop
 			}
-		case <-timeout:
-			sendSSE(w, flusher, "error", map[string]string{"message": "Request timed out"})
-			break loop
+		case msgType == "user":
+			umsg, _ := msg["message"].(map[string]interface{})
+			content, _ := umsg["content"].([]interface{})
+			for _, c := range content {
+				part, _ := c.(map[string]interface{})
+				if part["type"] == "tool_result" {
+					output := ""
+					if s, ok := part["content"].(string); ok {
+						output = s
+					} else {
+						data, _ := json.Marshal(part["content"])
+						output = string(data)
+					}
+					if len(output) > 5000 {
+						output = output[:5000] + "\n... [truncated]"
+					}
+					id, _ := part["tool_use_id"].(string)
+					contentBlocks = append(contentBlocks, MessagePart{Type: "tool_result", ToolID: id, ToolOutput: output})
+					sendSSE(w, flusher, "tool-end", map[string]interface{}{"toolId": id, "output": output})
+				}
+			}
+		case msgType == "result":
+			if strings.TrimSpace(currentText) != "" {
+				contentBlocks = append(contentBlocks, MessagePart{Type: "text", Text: currentText})
+			}
+			sendSSE(w, flusher, "done", map[string]string{})
+			goto done
 		}
 	}
+done:
+	cmd.Wait()
 
 	// Save assistant message
 	fullText := ""
@@ -553,23 +579,38 @@ func main() {
 	mux.HandleFunc("/api/health", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, 200, map[string]string{"status": "ok"})
 	})
-	mux.HandleFunc("/api/sessions", corsMiddleware(authMiddleware(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/api/sessions" {
+	apiHandler := corsMiddleware(authMiddleware(func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		if path == "/api/sessions" || path == "/api/sessions/" {
 			handleSessions(w, r)
 			return
 		}
-		if strings.HasPrefix(r.URL.Path, "/api/sessions/") && strings.HasSuffix(r.URL.Path, "/messages") {
+		if strings.HasSuffix(path, "/messages") {
 			handleMessages(w, r)
 			return
 		}
-		if strings.HasPrefix(r.URL.Path, "/api/sessions/") && strings.HasSuffix(r.URL.Path, "/abort") {
+		if strings.HasSuffix(path, "/abort") {
 			handleAbort(w, r)
 			return
 		}
-		if strings.HasPrefix(r.URL.Path, "/api/sessions/") {
-			handleSession(w, r)
+		handleSession(w, r)
+	}))
+	mux.HandleFunc("/api/sessions", apiHandler)
+	mux.HandleFunc("/api/sessions/", apiHandler)
+		path := r.URL.Path
+		if path == "/api/sessions/" || path == "/api/sessions" {
+			handleSessions(w, r)
 			return
 		}
+		if strings.HasSuffix(path, "/messages") {
+			handleMessages(w, r)
+			return
+		}
+		if strings.HasSuffix(path, "/abort") {
+			handleAbort(w, r)
+			return
+		}
+		handleSession(w, r)
 	})))
 
 	// Static files
