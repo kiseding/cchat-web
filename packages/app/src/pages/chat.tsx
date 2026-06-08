@@ -467,7 +467,8 @@ export function ChatPage() {
             placeholder=""
             rows={1}
             disabled={sending()}
-            class="flex-1 resize-none rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm outline-none transition-all disabled:opacity-50"
+            class="flex-1 resize-none rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 text-[16px] sm:text-sm outline-none transition-all disabled:opacity-50"
+			style="font-size: 16px" onFocus={(e) => { setTimeout(() => { e.currentTarget.style.fontSize = "" }, 100) }}
             style={{
               background: "var(--bg-base)",
               color: "var(--text-strong)",
