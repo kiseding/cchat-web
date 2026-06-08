@@ -2,25 +2,50 @@ import { createSignal, createResource, createEffect, For, Show } from "solid-js"
 import { useNavigate, useParams } from "@solidjs/router"
 import { api, type SessionInfo } from "../api/client"
 
-function ConfirmDialog(props: { message: string; confirmLabel?: string; confirmColor?: string; onConfirm: () => void; onCancel: () => void }) {
+function DialogOverlay(props: { closing: boolean; onClose: () => void; children: any }) {
   return (
-    <div class="fixed inset-0 z-50 flex items-center justify-center" style="background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); animation: fadeIn 0.3s ease-out" onClick={props.onCancel}>
-      <div class="rounded-2xl p-6 w-80 shadow-xl flex flex-col gap-5" style="background: var(--bg-base); border: 1px solid var(--border-base); animation: scaleIn 0.3s ease-out" onClick={e => e.stopPropagation()}>
-        <p class="text-[15px] text-center" style="color: var(--text-strong)">{props.message}</p>
-        <div class="flex gap-3 justify-center">
-          <button onClick={props.onCancel} class="px-5 py-2 rounded-lg text-[15px] cursor-pointer hover:opacity-80 transition-opacity" style="background: var(--bg-stronger); color: var(--text-base)">Cancel</button>
-          <button onClick={props.onConfirm} class="px-5 py-2 rounded-lg text-[15px] font-medium cursor-pointer hover:opacity-80 transition-opacity" style={{ background: props.confirmColor || "#dc2626", color: "white" }}>{props.confirmLabel || "Confirm"}</button>
-        </div>
+    <div class="fixed inset-0 z-50 flex items-center justify-center"
+      style={{
+        background: "rgba(0,0,0,0.6)",
+        backdropFilter: "blur(4px)",
+        WebkitBackdropFilter: "blur(4px)",
+        animation: props.closing ? "fadeOut 0.2s ease-in forwards" : "fadeIn 0.3s ease-out",
+      }}
+      onClick={props.onClose}>
+      <div style={{ animation: props.closing ? "scaleOut 0.2s ease-in forwards" : "scaleIn 0.3s ease-out" }}
+        onClick={e => e.stopPropagation()}>
+        {props.children}
       </div>
     </div>
   )
 }
 
+function ConfirmDialog(props: { message: string; confirmLabel?: string; confirmColor?: string; onConfirm: () => void; onCancel: () => void }) {
+  const [closing, setClosing] = createSignal(false)
+  const close = (fn: () => void) => {
+    setClosing(true)
+    setTimeout(fn, 180)
+  }
+  return (
+    <DialogOverlay closing={closing()} onClose={() => close(props.onCancel)}>
+      <div class="rounded-2xl p-6 w-80 shadow-xl flex flex-col gap-5" style="background: var(--bg-base); border: 1px solid var(--border-base)">
+        <p class="text-[15px] text-center" style="color: var(--text-strong)">{props.message}</p>
+        <div class="flex gap-3 justify-center">
+          <button onClick={() => close(props.onCancel)} class="px-5 py-2 rounded-lg text-[15px] cursor-pointer hover:opacity-80 transition-opacity" style="background: var(--bg-stronger); color: var(--text-base)">Cancel</button>
+          <button onClick={() => close(props.onConfirm)} class="px-5 py-2 rounded-lg text-[15px] font-medium cursor-pointer hover:opacity-80 transition-opacity" style={{ background: props.confirmColor || "#dc2626", color: "white" }}>{props.confirmLabel || "Confirm"}</button>
+        </div>
+      </div>
+    </DialogOverlay>
+  )
+}
+
 function NewSessionDialog(props: { creating: boolean; nameError: string; name: string; onInput: (v: string) => void; onCreate: () => void; onClose: () => void }) {
   let nameInputRef!: HTMLInputElement
+  const [closing, setClosing] = createSignal(false)
+  const close = () => { setClosing(true); setTimeout(props.onClose, 180) }
   return (
-    <div class="fixed inset-0 z-50 flex items-center justify-center" style="background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); animation: fadeIn 0.3s ease-out" onClick={props.onClose}>
-      <div class="rounded-2xl p-5 w-80 shadow-xl flex flex-col gap-4" style="background: var(--bg-base); border: 1px solid var(--border-base); animation: scaleIn 0.3s ease-out" onClick={e => e.stopPropagation()}>
+    <DialogOverlay closing={closing()} onClose={close}>
+      <div class="rounded-2xl p-5 w-80 shadow-xl flex flex-col gap-4" style="background: var(--bg-base); border: 1px solid var(--border-base)">
         <h3 class="text-[15px] font-semibold" style="color: var(--text-strong)">New Session</h3>
         <input ref={nameInputRef} type="text" value={props.name} onInput={e => { props.onInput(e.currentTarget.value) }}
           onKeyDown={e => { e.key === "Enter" && props.onCreate(); e.key === "Escape" && props.onClose() }}
@@ -28,8 +53,8 @@ function NewSessionDialog(props: { creating: boolean; nameError: string; name: s
           style={{ background: "var(--bg-raised)", color: "var(--text-strong)", border: `1px solid ${props.nameError ? "#dc2626" : "var(--border-base)"}` }} />
         <Show when={props.nameError}><p class="text-[13px]" style={{ color: "#dc2626" }}>{props.nameError}</p></Show>
         <div class="flex gap-2 justify-end">
-          <button onClick={props.onClose} class="px-4 py-2 rounded-lg text-[15px] cursor-pointer" style={{ background: "var(--bg-stronger)", color: "var(--text-[17px])" }}>Cancel</button>
-          <button onClick={props.onCreate} disabled={props.creating} class="px-4 py-2 rounded-lg text-[15px] font-medium cursor-pointer disabled:opacity-50" style={{ background: "#34d399", color: "white" }}>Create</button>
+          <button onClick={close} class="px-4 py-2 rounded-lg text-[15px] cursor-pointer" style={{ background: "var(--bg-stronger)", color: "var(--text-base)" }}>Cancel</button>
+          <button onClick={() => { close(); setTimeout(props.onCreate, 180) }} disabled={props.creating} class="px-4 py-2 rounded-lg text-[15px] font-medium cursor-pointer disabled:opacity-50" style={{ background: "#34d399", color: "white" }}>Create</button>
         </div>
       </div>
     </div>
