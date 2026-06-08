@@ -450,7 +450,7 @@ export function ChatPage() {
 
       {/* Input */}
       <div
-        class="shrink-0 sticky bottom-0 z-10 px-2 sm:px-3 pt-3 sm:pt-4 pb-2 mx-2 sm:mx-3 mb-0 sm:mb-3 rounded-2xl" style="padding-bottom: max(8px, env(safe-area-inset-bottom, 0px))"
+        class="shrink-0 px-2 sm:px-3 pt-3 sm:pt-4 pb-1 mx-2 sm:mx-3 mb-0 sm:mb-3 rounded-2xl"
         style="background: var(--bg-raised); border: 1px solid var(--border-base)"
       >
         <div class="flex gap-3 items-end">
