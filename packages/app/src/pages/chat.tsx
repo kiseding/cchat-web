@@ -354,6 +354,7 @@ export function ChatPage() {
             else parts.push({ type: "tool_result", toolOutput: t.toolOutput, toolId: t.toolId })
           }
         }
+		if (finalText) parts.push({ type: "text", text: finalText })
         const newMsgs = [...cur.messages]
         // Remove optimistic, add real user + assistant
         newMsgs.push({ id: "user-" + Date.now(), role: "user", content: text, timestamp: Date.now() })
@@ -485,7 +486,7 @@ export function ChatPage() {
             }
           >
             <button onClick={async () => {
-              await api.abortSession(sid)
+              await api.abortSession(params.id!)
               setSending(false)
             }}
               class="shrink-0 px-5 py-3 rounded-2xl font-medium text-sm transition-all cursor-pointer"
