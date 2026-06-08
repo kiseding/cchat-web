@@ -6,10 +6,10 @@ function ConfirmDialog(props: { message: string; confirmLabel?: string; confirmC
   return (
     <div class="fixed inset-0 z-50 flex items-center justify-center" style="background: rgba(0,0,0,0.5)" onClick={props.onCancel}>
       <div class="rounded-2xl p-6 w-80 shadow-lg flex flex-col gap-5" style="background: var(--bg-base); border: 1px solid var(--border-base)" onClick={e => e.stopPropagation()}>
-        <p class="text-[13px] text-center" style="color: var(--text-strong)">{props.message}</p>
+        <p class="text-[15px] text-center" style="color: var(--text-strong)">{props.message}</p>
         <div class="flex gap-3 justify-center">
-          <button onClick={props.onCancel} class="px-5 py-2 rounded-lg text-[13px] cursor-pointer" style="background: var(--bg-stronger); color: var(--text-[13px])">Cancel</button>
-          <button onClick={props.onConfirm} class="px-5 py-2 rounded-lg text-[13px] font-medium cursor-pointer" style={{ background: props.confirmColor || "#dc2626", color: "white" }}>{props.confirmLabel || "Confirm"}</button>
+          <button onClick={props.onCancel} class="px-5 py-2 rounded-lg text-[15px] cursor-pointer" style="background: var(--bg-stronger); color: var(--text-[17px])">Cancel</button>
+          <button onClick={props.onConfirm} class="px-5 py-2 rounded-lg text-[15px] font-medium cursor-pointer" style={{ background: props.confirmColor || "#dc2626", color: "white" }}>{props.confirmLabel || "Confirm"}</button>
         </div>
       </div>
     </div>
@@ -21,15 +21,15 @@ function NewSessionDialog(props: { creating: boolean; nameError: string; name: s
   return (
     <div class="fixed inset-0 z-50 flex items-center justify-center" style="background: rgba(0,0,0,0.5)" onClick={props.onClose}>
       <div class="rounded-2xl p-5 w-80 shadow-lg flex flex-col gap-4" style="background: var(--bg-base); border: 1px solid var(--border-base)" onClick={e => e.stopPropagation()}>
-        <h3 class="text-[13px] font-semibold" style="color: var(--text-strong)">New Session</h3>
+        <h3 class="text-[15px] font-semibold" style="color: var(--text-strong)">New Session</h3>
         <input ref={nameInputRef} type="text" value={props.name} onInput={e => { props.onInput(e.currentTarget.value) }}
           onKeyDown={e => { e.key === "Enter" && props.onCreate(); e.key === "Escape" && props.onClose() }}
-          placeholder="Session name (optional)" class="px-3 py-2 rounded-lg text-[13px] outline-none"
+          placeholder="Session name (optional)" class="px-3 py-2 rounded-lg text-[15px] outline-none"
           style={{ background: "var(--bg-raised)", color: "var(--text-strong)", border: `1px solid ${props.nameError ? "#dc2626" : "var(--border-base)"}` }} />
         <Show when={props.nameError}><p class="text-[13px]" style={{ color: "#dc2626" }}>{props.nameError}</p></Show>
         <div class="flex gap-2 justify-end">
-          <button onClick={props.onClose} class="px-4 py-2 rounded-lg text-[13px] cursor-pointer" style={{ background: "var(--bg-stronger)", color: "var(--text-[13px])" }}>Cancel</button>
-          <button onClick={props.onCreate} disabled={props.creating} class="px-4 py-2 rounded-lg text-[13px] font-medium cursor-pointer disabled:opacity-50" style={{ background: "#34d399", color: "white" }}>Create</button>
+          <button onClick={props.onClose} class="px-4 py-2 rounded-lg text-[15px] cursor-pointer" style={{ background: "var(--bg-stronger)", color: "var(--text-[17px])" }}>Cancel</button>
+          <button onClick={props.onCreate} disabled={props.creating} class="px-4 py-2 rounded-lg text-[15px] font-medium cursor-pointer disabled:opacity-50" style={{ background: "#34d399", color: "white" }}>Create</button>
         </div>
       </div>
     </div>
@@ -70,7 +70,7 @@ function Sidebar(props: { open: boolean; onClose: () => void; showConfirm: (msg:
 
   return (
     <div
-      class="fixed inset-y-0 left-0 z-40 w-[340px] flex flex-col transition-transform duration-300 ease-out"
+      class="fixed inset-y-0 left-0 z-40 w-[360px] flex flex-col transition-transform duration-300 ease-out"
       style={{
         background: "var(--bg-base)",
         "border-right": "1px solid var(--border-base)",
@@ -78,9 +78,9 @@ function Sidebar(props: { open: boolean; onClose: () => void; showConfirm: (msg:
       }}
     >
       <div class="flex items-center justify-between h-12 px-3 border-b" style="border-color: var(--border-base)">
-        <h2 class="font-semibold text-[13px]" style="color: var(--text-strong)">Sessions</h2>
+        <h2 class="font-semibold text-[15px]" style="color: var(--text-strong)">Sessions</h2>
         <button onClick={props.onNewSession}
-          class="w-6 h-6 rounded-full cursor-pointer transition-opacity hover:opacity-80 flex items-center justify-center text-[11px] font-bold"
+          class="w-6 h-6 rounded-full cursor-pointer transition-opacity hover:opacity-80 flex items-center justify-center text-[10px] font-bold"
           style={{ background: "#34d399", color: "white" }} title="New session">+</button>
       </div>
       <div class="flex-1 overflow-y-auto p-2 flex flex-col gap-1">
@@ -101,10 +101,10 @@ function Sidebar(props: { open: boolean; onClose: () => void; showConfirm: (msg:
                   }}
                 >
                   <div onClick={() => { navigate(`/chat/${session.id}`); props.onClose() }} class="min-w-0 flex-1 cursor-pointer">
-                    <div class="text-[13px] truncate" style={{ color: "var(--text-strong)" }}>{session.title || "Untitled"}</div>
+                    <div class="text-[15px] truncate" style={{ color: "var(--text-strong)" }}>{session.title || "Untitled"}</div>
                     <div class="text-[13px]" style="color: var(--text-weak)">{session.messageCount} msgs · {formatDate(session.updatedAt)}</div>
                   </div>
-                  <button onClick={() => deleteSession(session.id)} class="ml-2 px-2 py-1 rounded text-[13px] cursor-pointer shrink-0 font-medium" style={{ background: "#dc2626", color: "white" }}>Del</button>
+                  <button onClick={() => deleteSession(session.id)} class="ml-2 px-2 py-1 rounded text-[11px] cursor-pointer shrink-0 font-medium" style={{ background: "#dc2626", color: "white" }}>Del</button>
                 </div>
               )}
             </For>
@@ -169,7 +169,7 @@ export function MainLayout(props: { children: any }) {
   }
 
   return (
-    <div class="h-dvh w-screen flex flex-col overflow-hidden" style="position: relative" style="background: var(--bg-base); color: var(--text-[13px])">
+    <div class="h-dvh w-screen flex flex-col overflow-hidden" style="position: relative" style="background: var(--bg-base); color: var(--text-[17px])">
       {/* Overlay */}
       <Show when={sidebarOpen()}>
         <div class="fixed inset-0 z-30" style="background: rgba(0,0,0,0.3)" onClick={() => setSidebarOpen(false)} />
@@ -187,7 +187,7 @@ export function MainLayout(props: { children: any }) {
             <path d="M3 12h18M3 6h18M3 18h18" />
           </svg>
         </button>
-        <div class="font-medium text-[13px] truncate flex-1" style="color: var(--text-strong)">{sessionTitle()}</div>
+        <div class="font-medium text-[17px] truncate flex-1" style="color: var(--text-strong)">{sessionTitle()}</div>
 
         {/* macOS traffic lights */}
         <div class="flex items-center gap-3">

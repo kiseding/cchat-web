@@ -14,14 +14,14 @@ function LoginPage(props: { onLogin: () => void }) {
   return (
     <div class="h-dvh w-screen flex items-center justify-center relative" style="background: var(--bg-base)">
       <div class="flex flex-col items-center gap-4 w-80">
-        <h1 class="text-[13px] font-bold" style="color: var(--text-strong)">CChat-Web</h1>
+        <h1 class="text-[21px] font-bold" style="color: var(--text-strong)">CChat-Web</h1>
         <input
           type="password"
           value={input()}
           onInput={(e) => setInput(e.currentTarget.value)}
           onKeyDown={(e) => e.key === "Enter" && doLogin()}
           placeholder="Password"
-          class="w-full px-4 py-3 rounded-lg text-[13px] outline-none"
+          class="w-full px-4 py-3 rounded-lg text-[15px] outline-none"
           style={{
             background: "var(--bg-raised)",
             color: "var(--text-strong)",
@@ -31,7 +31,7 @@ function LoginPage(props: { onLogin: () => void }) {
         <button
           onClick={doLogin}
           disabled={!input().trim()}
-          class="w-full px-4 py-3 rounded-lg font-medium text-[13px] cursor-pointer disabled:opacity-50"
+          class="w-full px-4 py-3 rounded-lg font-medium text-[15px] cursor-pointer disabled:opacity-50"
           style="background: var(--accent); color: white"
         >
           Login
@@ -56,7 +56,7 @@ export function AppLayout(props: { children: any; params?: any; location?: any; 
 
   return (
     <Show when={loggedIn()} fallback={<LoginPage onLogin={() => setLoggedIn(true)} />}>
-      <div class="h-dvh w-screen flex flex-col overflow-hidden" style="background: var(--bg-base); color: var(--text-[13px])}">
+      <div class="h-dvh w-screen flex flex-col overflow-hidden" style="background: var(--bg-base); color: var(--text-[17px])}">
         {props.children}
       </div>
     </Show>
