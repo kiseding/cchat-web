@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -55,10 +54,6 @@ var (
 	runningCmd     = map[string]*exec.Cmd{}
 	rcMu           sync.Mutex
 	sessionsDir    = filepath.Join(os.Getenv("HOME"), ".cchat2web", "sessions")
-	processes      = map[string]*ClaudeProcess{}
-	procMu         sync.Mutex
-	sessionProcMap = map[string]string{}
-	spMu           sync.Mutex
 )
 
 func getEnv(k, d string) string {
@@ -74,119 +69,6 @@ func uuid() string {
 	b[6] = (b[6] & 0x0f) | 0x70
 	b[8] = (b[8] & 0x3f) | 0x80
 	return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:16])
-}
-
-// ── Claude Process ──
-
-type ClaudeEvent struct {
-	Type string
-	Data map[string]interface{}
-}
-
-type ClaudeProcess struct {
-	sessionID string
-	cmd       *exec.Cmd
-	stdin     io.WriteCloser
-	Events    chan ClaudeEvent
-	mu        sync.Mutex
-	alive     bool
-	done      chan bool
-}
-
-func startClaude(sessionID string) (*ClaudeProcess, error) {
-	choiceRule := "IMPORTANT: When asking the user to choose, format options as: 1. ShortLabel 2. ShortLabel 3. ShortLabel on ONE line separated by spaces."
-	cmd := exec.Command(claudePath,
-		"--session-id", sessionID,
-		"--input-format", "stream-json",
-		"--output-format", "stream-json",
-		"-p", "--verbose",
-		"--permission-mode", "bypassPermissions",
-		"--tools", "Task,Bash,CronCreate,CronDelete,CronList,Edit,EnterPlanMode,EnterWorktree,ExitPlanMode,ExitWorktree,Glob,Grep,NotebookEdit,Read,ScheduleWakeup,Skill,TaskCreate,TaskGet,TaskList,TaskOutput,TaskStop,TaskUpdate,WebFetch,WebSearch,Workflow,Write",
-		"--append-system-prompt", choiceRule,
-	)
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		return nil, err
-	}
-	cmd.Stderr = os.Stderr
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return nil, err
-	}
-	if err := cmd.Start(); err != nil {
-		return nil, err
-	}
-	cp := &ClaudeProcess{
-		sessionID: sessionID,
-		cmd:       cmd,
-		stdin:     stdin,
-		Events:    make(chan ClaudeEvent, 100),
-		alive:     true,
-		done:      make(chan bool),
-	}
-
-	go func() {
-		scanner := bufio.NewScanner(stdout)
-		scanner.Buffer(make([]byte, 1024*1024), 1024*1024)
-		for scanner.Scan() {
-			line := strings.TrimSpace(scanner.Text())
-			if line == "" {
-				continue
-			}
-			var msg map[string]interface{}
-			if err := json.Unmarshal([]byte(line), &msg); err != nil {
-				continue
-			}
-			msgType, _ := msg["type"].(string)
-			subtype, _ := msg["subtype"].(string)
-
-			switch {
-			case msgType == "system" && subtype == "init":
-				cp.Events <- ClaudeEvent{Type: "init", Data: msg}
-			case msgType == "system" && subtype == "thinking_tokens":
-				cp.Events <- ClaudeEvent{Type: "thinking", Data: msg}
-			case msgType == "assistant":
-				cp.Events <- ClaudeEvent{Type: "assistant", Data: msg}
-			case msgType == "user":
-				cp.Events <- ClaudeEvent{Type: "tool_result", Data: msg}
-			case msgType == "result":
-				cp.Events <- ClaudeEvent{Type: "done", Data: msg}
-				cp.mu.Lock()
-				cp.alive = false
-				cp.mu.Unlock()
-				goto done
-			}
-		}
-	done:
-		cmd.Wait()
-		cp.done <- true
-	}()
-
-	return cp, nil
-}
-
-func (cp *ClaudeProcess) send(text string) error {
-	cp.mu.Lock()
-	defer cp.mu.Unlock()
-	msg := map[string]interface{}{
-		"type": "user",
-		"message": map[string]interface{}{
-			"role":    "user",
-			"content": []map[string]interface{}{{"type": "text", "text": text}},
-		},
-	}
-	data, _ := json.Marshal(msg)
-	_, err := cp.stdin.Write(append(data, '\n'))
-	return err
-}
-
-func (cp *ClaudeProcess) kill() {
-	cp.mu.Lock()
-	defer cp.mu.Unlock()
-	cp.alive = false
-	if cp.cmd != nil && cp.cmd.Process != nil {
-		cp.cmd.Process.Kill()
-	}
 }
 
 // ── Session Storage ──
@@ -588,13 +470,6 @@ func sendSSE(w http.ResponseWriter, flusher http.Flusher, event string, data int
 	flusher.Flush()
 }
 
-func generateTitle(text string) string {
-	t := strings.Join(strings.Fields(text), " ")
-	if len(t) > 60 {
-		return t[:60] + "..."
-	}
-	return t
-}
 
 // ── Main ──
 
