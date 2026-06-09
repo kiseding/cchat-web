@@ -1,24 +1,17 @@
 const BASE = "/api"
 
-function getToken(): string {
-  return localStorage.getItem("cchat2web-token") || ""
-}
-
-export function setToken(token: string) {
-  localStorage.setItem("cchat2web-token", token)
-}
-
-export function hasToken(): boolean {
-  return !!getToken()
-}
+function getToken(): string { return localStorage.getItem("cchat2web-token") || "" }
+export function setToken(token: string) { localStorage.setItem("cchat2web-token", token) }
+export function hasToken(): boolean { return !!getToken() }
 
 export interface SessionInfo {
-  id: string
+  sessionId: string
   title: string
-  createdAt: number
-  updatedAt: number
+  projectPath: string
   messageCount: number
-  claudeSessionId?: string
+  lastActivity: number
+  inputTokens: number
+  outputTokens: number
 }
 
 export interface SessionDetail extends SessionInfo {
@@ -31,6 +24,7 @@ export interface Message {
   content: string
   parts?: MessagePart[]
   timestamp: number
+  extra?: { isCompactSummary?: boolean }
 }
 
 export interface MessagePart {
@@ -48,10 +42,11 @@ export interface SSEEvent {
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const token = getToken()
   const res = await fetch(`${BASE}${path}`, {
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${getToken()}`,
+      "X-Auth-Token": token,
     },
     ...options,
   })
@@ -63,26 +58,30 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  listSessions: () => request<SessionInfo[]>("/sessions"),
+  // Session list — comes from Claude JSONL
+  listSessions: () => request<SessionInfo[]>("/claude-sessions"),
 
-  createSession: (name?: string) => request<SessionInfo>("/sessions", {
-    method: "POST",
-    body: JSON.stringify({ name }),
-  }),
+  // Get session messages
+  getSession: (id: string) =>
+    request<Message[]>(`/claude-sessions/${id}`),
 
-  getSession: (id: string) => request<SessionDetail>(`/sessions/${id}`),
+  // Delete session from disk
+  deleteSession: (id: string) =>
+    request<{ ok: boolean }>(`/claude-sessions/${id}/delete`, { method: "DELETE" }),
 
-  deleteSession: (id: string) => request<{ ok: boolean }>(`/sessions/${id}`, { method: "DELETE" }),
+  // Export as Markdown
+  exportSessionUrl: (id: string) => `${BASE}/claude-sessions/${id}/export`,
 
-  sendMessage: (sessionId: string, text: string, onEvent: (event: SSEEvent) => void): Promise<void> => {
+  // Send message with SSE streaming
+  sendMessage: (sessionId: string | null, text: string, onEvent: (event: SSEEvent) => void): Promise<string | null> => {
     return new Promise((resolve, reject) => {
-      fetch(`${BASE}/sessions/${sessionId}/messages`, {
+      fetch(`${BASE}/sessions/${sessionId || "new"}/messages`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${getToken()}`,
+          "X-Auth-Token": getToken(),
         },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, sessionId }),
       })
         .then(async (res) => {
           if (!res.ok) {
@@ -93,13 +92,13 @@ export const api = {
           const reader = res.body!.getReader()
           const decoder = new TextDecoder()
           let buffer = ""
+          let capturedSessionId: string | null = null
           while (true) {
             const { done, value } = await reader.read()
-            if (done) { resolve(); return }
+            if (done) { resolve(capturedSessionId); return }
             buffer += decoder.decode(value, { stream: true })
-            // Parse complete SSE events from buffer
             const parts = buffer.split("\n\n")
-            buffer = parts.pop() || "" // keep incomplete chunk
+            buffer = parts.pop() || ""
             for (const part of parts) {
               const lines = part.split("\n")
               let event = ""
@@ -107,7 +106,9 @@ export const api = {
                 if (line.startsWith("event: ")) event = line.slice(7)
                 else if (line.startsWith("data: ")) {
                   try {
-                    onEvent({ event: event || "message", data: JSON.parse(line.slice(6)) })
+                    const data = JSON.parse(line.slice(6))
+                    if (event === "init" && data.sessionId) capturedSessionId = data.sessionId
+                    onEvent({ event: event || "message", data })
                   } catch {
                     onEvent({ event: event || "message", data: line.slice(6) })
                   }
@@ -116,10 +117,9 @@ export const api = {
             }
           }
         })
-        .catch(reject)
     })
   },
 
-  abortSession: (sessionId: string) =>
-    request<{ ok: boolean }>(`/sessions/${sessionId}/abort`, { method: "POST" }),
+  abortSession: () =>
+    request<{ ok: boolean }>("/abort", { method: "POST", body: JSON.stringify({}) }),
 }

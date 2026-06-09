@@ -1,7 +1,7 @@
-import { createSignal, createResource, For, Show, createEffect, onCleanup, onMount } from "solid-js"
+import { createSignal, createResource, For, Show, createEffect, onMount } from "solid-js"
 import { useParams, useNavigate } from "@solidjs/router"
 import { marked } from "marked"
-import { api, type Message, type SessionDetail } from "../api/client"
+import { api, type Message } from "../api/client"
 
 // Configure marked for safe rendering
 marked.setOptions({ breaks: true, gfm: true })
@@ -36,13 +36,23 @@ function ToolCard(props: { tools: Array<{ name: string; input?: any; output?: st
         <div class="p-2 flex flex-col gap-4">
           <For each={props.tools}>
             {(tool, i) => (
-              <div class="text-[13px]" style="color: var(--text-[17px])">
+              <div class="text-[13px]" style="color: var(--text-base)">
                 <div class="font-semibold px-1 text-[13px]" style="color: var(--text-weak)">
                   {i() + 1}. {tool.name}
                 </div>
                 <Show when={tool.input && Object.keys(tool.input).length > 0}>
                   <Show when={tool.input.command || tool.input.cmd} fallback={
-                    <pre class="whitespace-pre-wrap text-[13px] px-1 opacity-80 mb-1">{JSON.stringify(tool.input, null, 2)}</pre>
+                    <div class="rounded-md overflow-hidden mb-1" style="background: #1a1b26; color: #a9b1d6; font-family: ui-monospace,monospace">
+                      <div class="flex items-center gap-1.5 px-3 py-1.5 text-[11px]" style="background: #16171f">
+                        <span class="rounded-full inline-block w-2.5 h-2.5" style="background: #f7768e" />
+                        <span class="rounded-full inline-block w-2.5 h-2.5" style="background: #e0af68" />
+                        <span class="rounded-full inline-block w-2.5 h-2.5" style="background: #9ece6a" />
+                        <span class="ml-2" style="color: #565f89">{tool.name.toLowerCase()}</span>
+                      </div>
+                      <div class="px-3 py-2 text-[13px] leading-relaxed">
+                        <pre class="whitespace-pre-wrap" style="margin: 0; color: #a9b1d6; font-family: inherit">{JSON.stringify(tool.input, null, 2)}</pre>
+                      </div>
+                    </div>
                   }>
                     <div class="rounded-md overflow-hidden mb-1" style="background: #1a1b26; color: #a9b1d6; font-family: ui-monospace,monospace">
                       <div class="flex items-center gap-1.5 px-3 py-1.5 text-[11px]" style="background: #16171f">
@@ -117,13 +127,18 @@ function MessageBubble(props: { message: Message }) {
   if (hasTextParts()) {
     const merged = () => mergeParts(props.message.parts)
     return (
-      <div class="flex flex-col gap-1">
+      <div class="flex flex-col" style="gap: 1px">
         <For each={merged()}>
           {(block) => (
             <>
               <Show when={block.type === "text" && block.text}>
-                <div class="flex flex-col items-start">
-                  <div class="max-w-[92%] sm:max-w-[85%] rounded-2xl rounded-bl-md px-[15px] py-1.5" style="background: var(--bg-raised); color: var(--text-[17px]); border: 1px solid var(--border-base)">
+                <div class="flex flex-col" classList={{ "items-end": isUser(), "items-start": !isUser() }}>
+                  <div class="max-w-[92%] sm:max-w-[85%] rounded-2xl px-[15px] py-1.5"
+                    classList={{ "rounded-br-md": isUser(), "rounded-bl-md": !isUser() }}
+                    style={isUser()
+                      ? "background: var(--accent); color: white"
+                      : "background: var(--bg-raised); color: var(--text-base); border: 1px solid var(--border-base)"
+                    }>
                     <MarkdownContent text={block.text!} />
                   </div>
                 </div>
@@ -143,19 +158,18 @@ function MessageBubble(props: { message: Message }) {
   // Old format or user message
   return (
     <div class="flex flex-col" classList={{ "items-end": isUser(), "items-start": !isUser() }}>
-      <div
-        class="max-w-[92%] sm:max-w-[85%] rounded-2xl px-[15px] py-1.5"
-        classList={{ "rounded-br-md": isUser(), "rounded-bl-md": !isUser() }}
-        style={isUser()
-          ? "background: var(--accent); color: white"
-          : "background: var(--bg-raised); color: var(--text-[17px]); border: 1px solid var(--border-base)"
-        }
-      >
-        <Show when={props.message.content}>
+      <Show when={props.message.content}>
+        <div
+          class="max-w-[92%] sm:max-w-[85%] rounded-2xl px-[15px] py-1.5"
+          classList={{ "rounded-br-md": isUser(), "rounded-bl-md": !isUser() }}
+          style={isUser()
+            ? "background: var(--accent); color: white"
+            : "background: var(--bg-raised); color: var(--text-base); border: 1px solid var(--border-base)"
+          }
+        >
           <MarkdownContent text={props.message.content} />
-        </Show>
-      </div>
-      {/* Tool cards outside bubble for old format (merge consecutive) */}
+        </div>
+      </Show>
       <For each={mergeParts(props.message.parts?.filter(p => p.type !== "text") || [])}>
         {(block) => (
           <Show when={block.type === "tool-group"}>
@@ -180,15 +194,16 @@ export function ChatPage() {
   const [streamingTools, setStreamingTools] = createSignal<Array<{type:"tool_call"|"tool_result",toolName?:string,toolInput?:any,toolOutput?:string,toolId?:string}>>([])
   const [permissionMode, setPermissionMode] = createSignal("bypassPermissions")
   const [optimisticUserMsg, setOptimisticUserMsg] = createSignal<Message | null>(null)
-  const [sessionData, { refetch, mutate }] = createResource(
-    () => params.id || null,
-    (id) => id ? api.getSession(id) : Promise.resolve(null)
+  const sessionId = () => params.id === "new" ? null : params.id || null
+  const [messages, { refetch, mutate }] = createResource(
+    () => sessionId(),
+    (id) => id ? api.getSession(id) : Promise.resolve([] as Message[])
   )
 
-  // Auto-send pending message from session creation
+  // Auto-send pending message
   onMount(() => {
     const pending = sessionStorage.getItem("pending-msg")
-    if (pending && params.id) {
+    if (pending) {
       sessionStorage.removeItem("pending-msg")
       setTimeout(() => { setInput(pending); send() }, 100)
     }
@@ -207,25 +222,11 @@ export function ChatPage() {
     const text = input().trim()
     if (!text || sending()) return
 
-    // Auto-create session if on home page
-    let sid = params.id
-    if (!sid) {
-      try {
-        const s = await api.createSession()
-        sid = s.id
-        // Store text so new page can auto-send
-        sessionStorage.setItem("pending-msg", text)
-        navigate(`/chat/${s.id}`, { replace: true })
-        return // Let the new page instance handle sending
-      } catch { return }
-    }
-
     setInput("")
     setSending(true)
     setStreamingText("")
     setThinkingTokens(0)
     setStreamingTools([])
-    // Optimistic user message
     setOptimisticUserMsg({
       id: "optimistic-" + Date.now(),
       role: "user",
@@ -235,9 +236,12 @@ export function ChatPage() {
     scrollToBottom()
 
     try {
-      await api.sendMessage(sid, text, (evt) => {
+      await api.sendMessage(sessionId(), text, (evt) => {
         switch (evt.event) {
           case "init":
+            if (evt.data.sessionId && !sessionId()) {
+              navigate(`/chat/${evt.data.sessionId}`, { replace: true })
+            }
             if (evt.data.permissionMode) setPermissionMode(evt.data.permissionMode)
             break
           case "thinking":
@@ -264,24 +268,20 @@ export function ChatPage() {
       // Append user + assistant messages locally (no flash)
       const finalText = streamingText()
       const finalTools = streamingTools()
-      const cur = sessionData()
-      if (cur) {
-        const parts: any[] = []
-        if (finalTools.length > 0) {
-          for (const t of finalTools) {
-            if (t.type === "tool_call") parts.push({ type: "tool_call", toolName: t.toolName, toolInput: t.toolInput, toolId: t.toolId })
-            else parts.push({ type: "tool_result", toolOutput: t.toolOutput, toolId: t.toolId })
-          }
+      const parts: any[] = []
+      if (finalTools.length > 0) {
+        for (const t of finalTools) {
+          if (t.type === "tool_call") parts.push({ type: "tool_call", toolName: t.toolName, toolInput: t.toolInput, toolId: t.toolId })
+          else parts.push({ type: "tool_result", toolOutput: t.toolOutput, toolId: t.toolId })
         }
-		if (finalText) parts.push({ type: "text", text: finalText })
-        const newMsgs = [...cur.messages]
-        // Remove optimistic, add real user + assistant
-        newMsgs.push({ id: "user-" + Date.now(), role: "user", content: text, timestamp: Date.now() })
-        if (finalText || parts.length > 0) {
-          newMsgs.push({ id: "assistant-" + Date.now(), role: "assistant", content: finalText, parts, timestamp: Date.now() })
-        }
-        mutate({ ...cur, messages: newMsgs })
       }
+      if (finalText) parts.push({ type: "text", text: finalText })
+      const newMsgs: Message[] = [...(messages() || [])]
+      newMsgs.push({ id: "user-" + Date.now(), role: "user", content: text, timestamp: Date.now() })
+      if (finalText || parts.length > 0) {
+        newMsgs.push({ id: "assistant-" + Date.now(), role: "assistant", content: finalText, parts, timestamp: Date.now() })
+      }
+      mutate(newMsgs)
       setStreamingText("")
       setThinkingTokens(0)
       setStreamingTools([])
@@ -302,7 +302,7 @@ export function ChatPage() {
   })
 
   createEffect(() => {
-    if (sessionData()?.messages) scrollToBottom()
+    if (messages()?.length) scrollToBottom()
   })
 
   return (
@@ -314,10 +314,10 @@ export function ChatPage() {
       >
         <div class="flex flex-col gap-4">
           <Show
-            when={!sessionData.loading}
+            when={!messages.loading}
             fallback={<div class="text-center py-8" style="color: var(--text-weak)">Loading...</div>}
           >
-            <For each={sessionData()?.messages}>
+            <For each={messages() ?? []}>
               {(msg: Message) => <MessageBubble message={msg} />}
             </For>
 
@@ -331,7 +331,7 @@ export function ChatPage() {
               <div class="flex flex-col items-start">
                 <div
                   class="max-w-[92%] sm:max-w-[85%] rounded-2xl rounded-bl-md px-[15px] py-1.5"
-                  style="background: var(--bg-raised); color: var(--text-[17px]); border: 1px solid var(--border-base)"
+                  style="background: var(--bg-raised); color: var(--text-base); border: 1px solid var(--border-base)"
                 >
                   <Show when={thinkingTokens() > 0}>
                     <div class="text-[13px] mb-1" style="color: var(--text-weak)">
@@ -387,7 +387,7 @@ export function ChatPage() {
             rows={1}
             disabled={sending()}
             class="flex-1 resize-none rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 text-[16px] sm:text-[15px] outline-none transition-all disabled:opacity-50"
-			style="font-size: 16px" onFocus={(e) => { setTimeout(() => { e.currentTarget.style.fontSize = "" }, 100) }}
+			style="font-size: 16px" onFocus={(e) => { const el = e.currentTarget; setTimeout(() => { el.style.fontSize = "" }, 100) }}
             style={{
               background: "var(--bg-base)",
               color: "var(--text-strong)",

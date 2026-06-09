@@ -43,57 +43,26 @@ function ConfirmDialog(props: { message: string; confirmLabel?: string; confirmC
   )
 }
 
-function NewSessionDialog(props: { creating: boolean; nameError: string; name: string; onInput: (v: string) => void; onCreate: () => void; onClose: () => void }) {
-  let nameInputRef!: HTMLInputElement
-  const [closing, setClosing] = createSignal(false)
-  const close = () => {
-    setClosing(true)
-    requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(props.onClose, 200)))
-  }
-  return (
-    <DialogOverlay closing={closing()} onClose={close}>
-      <div class="rounded-2xl p-5 w-80 shadow-xl flex flex-col gap-4" style="background: var(--bg-base); border: 1px solid var(--border-base)">
-        <h3 class="text-[15px] font-semibold" style="color: var(--text-strong)">New Session</h3>
-        <input ref={nameInputRef} type="text" value={props.name} onInput={e => { props.onInput(e.currentTarget.value) }}
-          onKeyDown={e => { e.key === "Enter" && props.onCreate(); e.key === "Escape" && props.onClose() }}
-          placeholder="Session name (optional)" class="px-3 py-2 rounded-lg text-[15px] outline-none"
-          style={{ background: "var(--bg-raised)", color: "var(--text-strong)", border: `1px solid ${props.nameError ? "#dc2626" : "var(--border-base)"}` }} />
-        <Show when={props.nameError}><p class="text-[13px]" style={{ color: "#dc2626" }}>{props.nameError}</p></Show>
-        <div class="flex gap-2 justify-end">
-          <button onClick={close} class="px-4 py-2 rounded-lg text-[15px] cursor-pointer" style={{ background: "var(--bg-stronger)", color: "var(--text-base)" }}>Cancel</button>
-          <button onClick={() => {
-            setClosing(true)
-            requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(props.onCreate, 200)))
-          }} disabled={props.creating} class="px-4 py-2 rounded-lg text-[15px] font-medium cursor-pointer disabled:opacity-50" style={{ background: "#34d399", color: "white" }}>Create</button>
-        </div>
-      </div>
-    </DialogOverlay>
-  )
-}
-
 function Sidebar(props: { open: boolean; onClose: () => void; showConfirm: (msg: string, label?: string, color?: string) => Promise<boolean>; onNewSession: () => void; refreshTick: number }) {
-  // Refetch when sidebar opens
-  createEffect(() => {
-    if (props.open) refetch()
-  })
-  const _showConfirm = props.showConfirm
+  createEffect(() => { if (props.open) refetch() })
   const navigate = useNavigate()
   const params = useParams<{ id?: string }>()
   const [sessions, { refetch, mutate }] = createResource(() => props.refreshTick + 1, api.listSessions)
   const [deleting, setDeleting] = createSignal<Set<string>>(new Set())
 
-  async function deleteSession(id: string) {
-    const ok = await _showConfirm("Delete this session?", "Delete", "#dc2626")
+  const formatTokens = (n: number) => n >= 1e6 ? (n/1e6).toFixed(1)+"M" : n >= 1000 ? (n/1e3).toFixed(1)+"K" : String(n)
+
+  async function deleteSession(sessionId: string) {
+    const ok = await props.showConfirm("Delete this session?", "Delete", "#dc2626")
     if (!ok) return
-    setDeleting(prev => new Set(prev).add(id))
+    setDeleting(prev => new Set(prev).add(sessionId))
     setTimeout(() => {
       const list = sessions()
-      if (list) mutate(list.filter(s => s.id !== id))
-      setDeleting(prev => { const n = new Set(prev); n.delete(id); return n })
-      // If current session was deleted, go home
-      if (params.id === id) navigate("/")
+      if (list) mutate(list.filter(s => s.sessionId !== sessionId))
+      setDeleting(prev => { const n = new Set(prev); n.delete(sessionId); return n })
+      if (params.id === sessionId) navigate("/")
     }, 300)
-    api.deleteSession(id).catch(console.error)
+    api.deleteSession(sessionId).catch(console.error)
   }
 
   function formatDate(ts: number) {
@@ -120,26 +89,33 @@ function Sidebar(props: { open: boolean; onClose: () => void; showConfirm: (msg:
       </div>
       <div class="flex-1 overflow-y-auto p-2 flex flex-col gap-1">
         <Show when={!sessions.loading} fallback={<div class="text-[13px] p-4 text-center" style="color: var(--text-weak)">Loading...</div>}>
+          <Show when={sessions.error}>
+            <div class="text-[13px] p-4 text-center" style="color: #ef4444">{String(sessions.error)}</div>
+          </Show>
           <Show when={sessions()?.length} fallback={
-            <div class="text-[13px] p-4 text-center" style="color: var(--text-weak)">No sessions yet</div>
+            <Show when={!sessions.error}><div class="text-[13px] p-4 text-center" style="color: var(--text-weak)">No sessions yet</div></Show>
           }>
             <For each={sessions()}>
               {(session: SessionInfo) => (
                 <div
                   class="flex items-center justify-between p-2 rounded-xl transition-all duration-300 overflow-hidden group"
                   classList={{
-                    "opacity-0 max-h-0! py-0! my-0! border-0! pointer-events-none": deleting().has(session.id),
+                    "opacity-0 max-h-0! py-0! my-0! border-0! pointer-events-none": deleting().has(session.sessionId),
                   }}
                   style={{
-                    background: params.id === session.id ? "var(--bg-stronger)" : "var(--bg-raised)",
-                    "max-height": deleting().has(session.id) ? "0px" : "60px",
+                    background: params.id === session.sessionId ? "var(--bg-stronger)" : "var(--bg-raised)",
+                    "max-height": deleting().has(session.sessionId) ? "0px" : "60px",
                   }}
                 >
-                  <div onClick={() => { props.onClose(); setTimeout(() => navigate(`/chat/${session.id}`), 300) }} class="min-w-0 flex-1 cursor-pointer">
+                  <div onClick={() => { props.onClose(); setTimeout(() => navigate(`/chat/${session.sessionId}`), 300) }} class="min-w-0 flex-1 cursor-pointer">
                     <div class="text-[15px] truncate" style={{ color: "var(--text-strong)" }}>{session.title || "Untitled"}</div>
-                    <div class="text-[13px]" style="color: var(--text-weak)">{session.messageCount} msgs · {formatDate(session.updatedAt)}</div>
+                    <div class="text-[13px]" style="color: var(--text-weak)">
+                      {session.messageCount} msgs
+                      {session.inputTokens + session.outputTokens > 0 ? ` · in:${formatTokens(session.inputTokens)} out:${formatTokens(session.outputTokens)}` : ""}
+                      {" · "}{formatDate(session.lastActivity)}
+                    </div>
                   </div>
-                  <button onClick={() => deleteSession(session.id)} class="ml-2 px-2 py-1 rounded text-[11px] cursor-pointer shrink-0 font-medium" style={{ background: "#dc2626", color: "white" }}>Del</button>
+                  <button onClick={() => deleteSession(session.sessionId)} class="ml-2 px-2 py-1 rounded text-[11px] cursor-pointer shrink-0 font-medium" style={{ background: "#dc2626", color: "white" }}>Del</button>
                 </div>
               )}
             </For>
@@ -160,35 +136,13 @@ export function MainLayout(props: { children: any }) {
   const [confirmLabel, setConfirmLabel] = createSignal("Confirm")
   const [confirmColor, setConfirmColor] = createSignal("#dc2626")
   let confirmResolve: ((v: boolean) => void) | null = null
-  const [sessionData] = createResource(
-    () => params.id || null,
-    (id) => id ? api.getSession(id) : Promise.resolve(null)
-  )
 
-  // New session dialog state
-  const [showNewDialog, setShowNewDialog] = createSignal(false)
-  const [newSessionName, setNewSessionName] = createSignal("")
-  const [newSessionError, setNewSessionError] = createSignal("")
-  const [creating, setCreating] = createSignal(false)
+  // Load sessions to find title for header
+  const [sessionList] = createResource(() => refreshTick() + 1, api.listSessions)
 
-  async function createNewSession() {
-    setCreating(true)
-    setNewSessionError("")
-    try {
-      const session = await api.createSession(newSessionName().trim() || undefined)
-      navigate(`/chat/${session.id}`)
-      setShowNewDialog(false)
-      setRefreshTick(t => t + 1)
-    } catch (err: any) {
-      setCreating(false)
-      if (err.message?.includes("already exists")) setNewSessionError("Name already taken.")
-    }
-  }
-
-  function openNewDialog() {
-    setNewSessionName("")
-    setNewSessionError("")
-    setShowNewDialog(true)
+  function openNewSession() {
+    setSidebarOpen(false)
+    navigate("/chat/new")
   }
 
   function showConfirm(msg: string, label?: string, color?: string): Promise<boolean> {
@@ -198,19 +152,20 @@ export function MainLayout(props: { children: any }) {
   }
 
   const sessionTitle = () => {
-    if (!params.id) return "CChat-Web"
-    const d = sessionData()
-    return d?.title || "CChat-Web"
+    if (!params.id || params.id === "new") return "CChat-Web"
+    const list = sessionList()
+    const s = list?.find((s: SessionInfo) => s.sessionId === params.id)
+    return s?.title || "CChat-Web"
   }
 
   return (
-    <div class="h-dvh w-screen flex flex-col overflow-hidden" style="position: relative" style="background: var(--bg-base); color: var(--text-[17px])">
+    <div class="h-dvh w-screen flex flex-col overflow-hidden" style="position: relative" style="background: var(--bg-base); color: var(--text-base)">
       {/* Overlay */}
       <Show when={sidebarOpen()}>
         <div class="fixed inset-0 z-30" style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }} onClick={() => setSidebarOpen(false)} />
       </Show>
 
-      <Sidebar open={sidebarOpen()} onClose={() => setSidebarOpen(false)} showConfirm={showConfirm} onNewSession={openNewDialog} refreshTick={refreshTick()} />
+      <Sidebar open={sidebarOpen()} onClose={() => setSidebarOpen(false)} showConfirm={showConfirm} onNewSession={openNewSession} refreshTick={refreshTick()} />
 
       <header class="shrink-0 flex items-center gap-3 px-3 h-12 border-b" style="border-color: var(--border-base); background: var(--bg-raised)">
         <button
@@ -227,20 +182,20 @@ export function MainLayout(props: { children: any }) {
         {/* macOS traffic lights */}
         <div class="flex items-center gap-3">
           <button onClick={async () => {
-            if (!params.id) return
+            if (!params.id || params.id === "new") return
             if (await showConfirm("Delete this session?", "Delete", "#dc2626")) { api.deleteSession(params.id); navigate("/") }
           }}
             class="w-[18px] h-[18px] rounded-full transition-opacity"
-            classList={{ "cursor-pointer hover:opacity-80": !!params.id, "opacity-30 cursor-not-allowed": !params.id }}
-            style={{ background: "#f87171" }} title={params.id ? "Delete session" : "No session"} />
+            classList={{ "cursor-pointer hover:opacity-80": !!params.id && params.id !== "new", "opacity-30 cursor-not-allowed": !params.id || params.id === "new" }}
+            style={{ background: "#f87171" }} title={params.id && params.id !== "new" ? "Delete session" : "No session"} />
           <button onClick={async () => {
-            if (!params.id) return
+            if (!params.id || params.id === "new") return
             if (await showConfirm("Close this session?", "Close", "#fbbf24")) navigate("/")
           }}
             class="w-[18px] h-[18px] rounded-full transition-opacity"
-            classList={{ "cursor-pointer hover:opacity-80": !!params.id, "opacity-30 cursor-not-allowed": !params.id }}
-            style={{ background: "#fbbf24" }} title={params.id ? "Close session" : "No session"} />
-          <button onClick={openNewDialog}
+            classList={{ "cursor-pointer hover:opacity-80": !!params.id && params.id !== "new", "opacity-30 cursor-not-allowed": !params.id || params.id === "new" }}
+            style={{ background: "#fbbf24" }} title={params.id && params.id !== "new" ? "Close session" : "No session"} />
+          <button onClick={openNewSession}
             class="w-[18px] h-[18px] rounded-full cursor-pointer hover:opacity-80 transition-opacity"
             style={{ background: "#34d399" }} title="New session" />
         </div>
@@ -258,18 +213,6 @@ export function MainLayout(props: { children: any }) {
           confirmColor={confirmColor()}
           onConfirm={() => { setConfirmMsg(""); confirmResolve?.(true) }}
           onCancel={() => { setConfirmMsg(""); confirmResolve?.(false) }}
-        />
-      </Show>
-
-      {/* New Session Dialog */}
-      <Show when={showNewDialog()}>
-        <NewSessionDialog
-          creating={creating()}
-          nameError={newSessionError()}
-          name={newSessionName()}
-          onInput={setNewSessionName}
-          onCreate={createNewSession}
-          onClose={() => setShowNewDialog(false)}
         />
       </Show>
     </div>

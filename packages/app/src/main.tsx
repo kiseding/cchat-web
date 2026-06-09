@@ -10,6 +10,7 @@ render(
     <Router root={AppLayout}>
       <Route path="/" component={MainLayout}>
         <Route path="/" component={ChatPage} />
+        <Route path="/chat/new" component={ChatPage} />
         <Route path="/chat/:id" component={ChatPage} />
       </Route>
     </Router>
